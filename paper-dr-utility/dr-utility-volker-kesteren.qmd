@@ -25,8 +25,90 @@ Rather than sharing the original research data, a synthetic surrogate is shared 
 Additionally, synthetic data is increasingly being used for training machine learning models [@nikolenko2021]. 
 On a lower level, synthetic data can be used in model testing pipelines (before access to the real data is provided), for data exploration (misschien YOUTH citeren all), and for educational purposes.
 
-In short, the general idea of synthetic data is to substitute values from the collected data with synthetic values that are generated from a model. In this way, it is possible to generate an entirely new synthetic data set [commonly referred to as the *fully* synthetic data approach\; @rubin_statistical_1993], but one could also replace only those values that would yield a high risk of disclosure when released [called *partially* synthetic data\; @little_statistical_1993]. Both approaches essentially attempt to build a model that incorporates as much of the information in the real data as possible. The models used to generate synthetic data were originally closely related to methods used for multiple imputation of missing data, such as fully conditional specification [@volker2021] or sequential regression [@nowok2016]. Recently, significant improvements in generative modelling in combination with work on formal privacy guarantees sparked the development of a great deal of novel methods in the computer science community [e.g., @patki2016; @xu_ctgan_2019].
+In short, the general idea of synthetic data is to substitute values from the collected data with synthetic values that are generated from a model. 
+In this way, it is possible to generate an entirely new synthetic data set [commonly referred to as the *fully* synthetic data approach; @rubin_statistical_1993], but one could also replace only those values that would yield a high risk of disclosure when released [called *partially* synthetic data; @little_statistical_1993]. 
+Both approaches essentially attempt to build a model that incorporates as much of the information in the real data as possible. 
+The models used to generate synthetic data were originally closely related to methods used for multiple imputation of missing data, such as fully conditional specification [@volker2021] or sequential regression [@nowok2016]. 
+Recently, significant improvements in generative modelling in combination with work on formal privacy guarantees sparked the development of a great deal of novel methods in the computer science community [e.g., @patki2016; @xu_ctgan_2019]. 
+Through these developments, the quality of synthetic data improved significantly, and while the notion of using fake data for research purposes was originally regarded as laughable, it is nowadays increasingly being used in practice.
 
+The main challenge when generating synthetic data is to adequately balance the privacy leakage with the utility (i.e., quality) of the synthetic data. 
+On the upper limit of this privacy-utility trade-off, the synthesis model is so good (or, rather, bad), that the real data is exactly reproduced, resulting in the same privacy loss as when disseminating the real data. 
+In statistical terms, the synthesis model is overparameterized to such an extent that there are no degrees of freedom left, and there is thus no randomness involved in the generation of the synthetic values. 
+On the lower limit of the trade-off, synthetic values are generated without borrowing any information from the real data. 
+For example, we could place the value $0$ or a random draw from a standard normal distribution for every record and every variable, such that the synthetic data contains only noise. 
+A synthesis model usually sits somewhere between these two extremes, and contains some information from the real data, which implies that the synthetic data resembles the real data to some extent, yielding more than zero utility, but also some disclosure risk. 
+The data provider typically wants to know what privacy loss is incurred by disseminating the synthetic data, while the user wants to know whether any analysis can be reliably performed. 
+At the same time, knowledge about the utility can help the data provider to improve the quality of the synthesis model. Hence, the synthetic data provider is left with the complicated task of qualifying where on this continuum the synthetic data is located.
 
+Based on this privacy-utility trade-off, it seems obvious that any attempt of data synthesis results in the loss of information. 
+Accordingly, the utility of the synthetic data will always be lower than the utility of the real data. 
+The questions that naturally arise are how much information is sacrificed, and how much the synthetic data deviates from the observed data. 
+In the synthetic data literature, three classes of utility measures have been distinguished [for a thorough review of these measures, see @drechsler2023]: fit-for-purpose measures, analysis-specific utility measures and global utility measures. 
+Fit-for-purpose measures are typically the first step in assessing the quality of the synthetic data. They typically involve comparing the univariate distributions of the observed and synthetic data (for example using visualization techniques or goodness-of-fit measures). 
+Although very useful to get an initial impression of the quality of the data synthesis models used, this picture is by definition limited, because only one or two variables variables are assessed at the same time. 
+Hence, complex relationships between variables will always be out of scope. 
+Global utility measures build up on the fit-for-purpose measures, by comparing the distribution of the synthetic data with the distribution of the observed data in a more general way. 
+This can be done using some distance measure [e.g., the Kullback-Leibler divergence; see @karr_utility_2006], but also by estimating how well a prediction model can distinguish between the observed and synthetic data, and using the predicted probabilities [propensity scores; @rosenbaum_propensity_scores_1983] as a measure of discrepancy [e.g., the propensity score mean squared error, $pMSE$; @Woo_global_2009; @snoke_utility_2018]. 
+While global utility measures paint a rather complete picture, that is, over the entire range of the data, they tend to be too general.
+That is, global utility measures can be so broad that important discrepancies between the real and synthetic data can be missed, and an a synthetic data set with high global utility might still yield analyses with results that are far from the results from real data analyses [see @drechsler_utility_2022]. 
+Lastly, the analysis-specific utility measures quantify to what extent analyses performed on the synthetic data align with the same analyses on the observed data. 
+These measures can evaluate to what degree the coefficients of a regression model are similar [e.g., using the confidence interval overlap; @karr_utility_2006], but also to what extent prediction models trained on the synthetic and observed data are perform similarly in terms of evaluation metrics. 
+However, also these measures have important shortcomings. 
+Analysis-specific utility generally does not carry over, even not to closely related analyses: high specific utility for one analysis does not at all imply high utility for another analysis. 
+Since data providers typically do not know which analyses will be performed with the synthetic data, it is impossible to provide analysis-specific utility measures for all potentially relevant analyses [for a more thorough discussion, see @drechsler_utility_2022].
+
+From the other perspective on the privacy-utility trade-off, that is, the privacy-side, several promising advances have been made with respect to building formal privacy guarantees into the data generation mechanism through differential privacy (CITE DWORK; CITE DP-SYNTHESIS METHOD). 
+In addition to these privacy-by-design mechanisms, some measures exist to quantify privacy loss of synthetic data after generation. 
+However, the practical applicability of these measures depends on whether the data is fully or partially synthetic, and especially in case of the former, the practical applicability of these measures is often limited [for an extensive discussion of these issues, see @drechsler2023]. 
+More research on measures to evaluate disclosure risks in synthetic is thus certainly needed, but the current paper focuses on utility measures for synthetic data.
+
+Specifically, we illustrate a group of methods under the umbrella of density ratio estimation [for a thorough evaluation of work done is this area, see @sugiyama_suzuki_kanamori_2012] for assessing synthetic data utility that incorporates fit-for-purpose, global and analysis-specific utility measures. 
+In short, the framework of density ratio estimation attempts to compare the multivariate distributions of two data sets (e.g., two different samples or groups) by directly estimation the ratio of their densities. 
+The idea is that if two data sets are drawn from the same data-generating mechanism, their densities should be similar, and the ratio of their densities should thus be close to one at all possible points in the multivariate space. 
+This approach easily extends from univariate to bivariate and multivariate densities. As such, it bridges the gap between fit-for-purpose and global utility measures. 
+Moreover, a density ratio can also be estimated for the posterior distributions of parameters, and thus also incorporates specific utility measures. 
+The only requirement of density ratio estimation is that there are samples (e.g., observations, samples from a posterior) from the observed and synthetic data (or parameter) distributions, or that these distributions can be approximated, for example with a (multivariate) normal distribution. 
+It is not required to assume some parametric distribution, but in cases where no samples are available, it can help to simplify the process of estimation the density ratio. 
+Note that density ratio estimation deliberately does not entail estimating the densities of the observed and synthetic data separately, and taking their ratio. 
+Estimating the probability distribution of a data set is one of the hardest challenges in statistics, unavoidably resulting in estimation errors. 
+When performing this task for two data sets, and subsequently taking the ratio, may magnify the estimation errors, resulting in a poorer estimate of the density ratio then necessary when directly estimating the density ratio.
+
+In what follows, we intuitively describe the density ratio estimation framework, reviewing some of the work done in this area, while attempting to avoid technicalities where possible, while referring to the underlying mathematical foundations. 
+We will briefly relate the method to existing utility measures, and describe how existing utility measures either fall under the umbrella of density ratio estimation, or are related to those. 
+Subsequently, we will illustrate how the method can be used in practice by providing multiple examples. Lastly, we will discuss shortcomings of the method and relate these to avenues for future work.
+
+# Density ratio estimation
+
+The framework of density ratio estimation was originally developed in the machine learning community for the comparison of two probability distributions [for an overview, see @sugiyama_suzuki_kanamori_2012]. 
+The framework has been shown to be applicable for prediction [@sugiyama_conditional_2010; @sugiyama_classification_2010], outlier detection [@shohei_dre_outlier_2008], change-point detection in time-series [@liu_change_2013], importance weighting under domain adaptation [or, in statistical terms, sample selection bias; @kanamori_ulsif_2009], and, importantly, two-sample homogeneity tests [@sugiyama_lstst_2011]. 
+Regardless of the exact goal, the idea is to compare two distributions by estimating the density ratio $r(\boldsymbol{x})$ between the probability distributions of the numerator samples, which we take to be the synthetic data samples, $p_{syn}(\boldsymbol{x}_{syn})$, and the denominator samples, which we take to be the observed data samples, $p_{obs}(\boldsymbol{x}_{obs})$. 
+A naive approach would be to estimate the observed and synthetic data density separately, for example using kernel density estimation [REF], and subsequently compute the ratio from these estimated densities. 
+However, density estimation is one of the hardest tasks in statistical learning, and is prone to estimation errors that would affect both estimated densities. 
+When subsequently taking the ratio of the estimated densities, the estimation errors might be magnified, and the validity of the resulting density ratio might be lower than strictly necessary. 
+In fact, extensive simulations on a wide variety of tasks showed that directly estimating the density ratio typically outperforms naive kernel density estimation, especially when the dimensionality of the data increases [e.g., @Kanamori2012; @shohei_dre_outlier_2008; @kanamori_ulsif_2009].
+
+Over the past years, several methods for direct density ratio estimation have been developed, that typically employ some divergence measure to estimate the distance from the density ratio model to the true density ratio function. 
+To keep the discussion general, we focus here on a class of methods that employ the *Bregman* divergence to quantify this distance [for a thorough review and technical discussion, see @sugiyama_bregman_2012]. 
+In some sense, this framework bears some resemblance to model selection using information criteria (e.g., Akaike's information criterion), where the distance from a statistical model to the true data-generating mechanism is estimated (e.g., by relying on an estimate of the Kullback-Leibler divergence). 
+In fact, the Kullback-Leibler divergence is a special case of the more general class of Bregman divergences, and one of the density ratio estimation techniques [the Kullback-Leibler importance estimation procedure\; @sugiyama2008] relies on the Kullback-Leibler divergence to estimate the density ratio function.
+
+# Illustration
+
+```{r}
+# normal versus normal
+# 
+# normal versus laplace
+# 
+# normal versus lognormal
+# 
+# normal versus t
+```
+
+```{r}
+# multivariate normal versus multivariate normal
+# 
+# multivariate normal versus something else
+```
 
 # References
