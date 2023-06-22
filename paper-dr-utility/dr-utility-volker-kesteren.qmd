@@ -285,6 +285,12 @@ ggplot() +
 
 # Discussion
 
+Discuss relation with existing utility measures as pmse (i.e., similar through probabilistic classification) and eventually kl-divergence.
+
+Discuss the high-dimensional extensions of density-ratio estimation
+
+Discuss how you get informative density ratio values at every point in the multivariate data distribution
+
 Number of centers
 
 Model selection
