@@ -74,7 +74,7 @@ Note that density ratio estimation deliberately does not entail estimating the d
 Estimating the probability distribution of a data set is one of the hardest challenges in statistics, unavoidably resulting in estimation errors. 
 When performing this task for two data sets, and subsequently taking the ratio, may magnify the estimation errors, resulting in a poorer estimate of the density ratio then necessary when directly estimating the density ratio.
 
-In what follows, we intuitively describe the density ratio estimation framework, reviewing some of the work done in this area, while attempting to avoid technicalities where possible, while referring to the underlying mathematical foundations. 
+In what follows, we describe the density ratio estimation framework, summarizing some of the work done in this area. 
 We will briefly relate the method to existing utility measures, and describe how existing utility measures either fall under the umbrella of density ratio estimation, or are related to those. 
 Subsequently, we will illustrate how the method can be used in practice by providing multiple examples. Lastly, we will discuss shortcomings of the method and relate these to avenues for future work.
 
@@ -82,7 +82,7 @@ Subsequently, we will illustrate how the method can be used in practice by provi
 
 The framework of density ratio estimation was originally developed in the machine learning community for the comparison of two probability distributions [for an overview, see @sugiyama_suzuki_kanamori_2012]. 
 The framework has been shown to be applicable for prediction [@sugiyama_conditional_2010; @sugiyama_classification_2010], outlier detection [@shohei_dre_outlier_2008], change-point detection in time-series [@liu_change_2013], importance weighting under domain adaptation [or, in statistical terms, sample selection bias; @kanamori_ulsif_2009], and, importantly, two-sample homogeneity tests [@sugiyama_lstst_2011]. 
-Regardless of the exact goal, the idea is to compare two distributions by estimating the density ratio $r(\boldsymbol{x})$ between the probability distributions of the numerator samples, which we take to be the synthetic data samples, $p_{syn}(\boldsymbol{x}_{syn})$, and the denominator samples, which we take to be the observed data samples, $p_{obs}(\boldsymbol{x}_{obs})$. 
+Regardless of the exact goal, the idea is to compare two distributions by estimating the density ratio $r(\boldsymbol{x})$ between the probability distributions of the numerator samples, which we take to be the synthetic data samples, $p_{syn}(\boldsymbol{x})$, and the denominator samples, which we take to be the observed data samples, $p_{obs}(\boldsymbol{x})$. 
 A naive approach would be to estimate the observed and synthetic data density separately, for example using kernel density estimation [REF], and subsequently compute the ratio from these estimated densities. 
 However, density estimation is one of the hardest tasks in statistical learning, and is prone to estimation errors that would affect both estimated densities. 
 When subsequently taking the ratio of the estimated densities, the estimation errors might be magnified, and the validity of the resulting density ratio might be lower than strictly necessary. 
@@ -92,17 +92,189 @@ Over the past years, several methods for direct density ratio estimation have be
 To keep the discussion general, we focus here on a class of methods that employ the *Bregman* divergence to quantify this distance [for a thorough review and technical discussion, see @sugiyama_bregman_2012]. 
 In some sense, this framework bears some resemblance to model selection using information criteria (e.g., Akaike's information criterion), where the distance from a statistical model to the true data-generating mechanism is estimated (e.g., by relying on an estimate of the Kullback-Leibler divergence). 
 In fact, the Kullback-Leibler divergence is a special case of the more general class of Bregman divergences, and one of the density ratio estimation techniques [the Kullback-Leibler importance estimation procedure\; @sugiyama2008] relies on the Kullback-Leibler divergence to estimate the density ratio function.
+Other special cases of the Bregman divergence include the Euclidean distance and the Mahalanobis distance.
 
-# Illustration
+HIER PLAATJE TOEVOEGEN VAN DENSITY RATIO ESTIMATION
 
-```{r}
-# normal versus normal
-# 
-# normal versus laplace
-# 
-# normal versus lognormal
-# 
-# normal versus t
+[[COMMENT: TO BE FAIR, IM NOT SO SURE HERE ABOUT ALL TECHNICALITIES IN THE UPCOMING SECTION. PERHAPS IT'S BETTER TO LEAVE THESE OUT, AND JUST DISCUSS THE GENERAL IDEA WITHOUT GOING INTO THE DETAILS. I'M STILL SEEKING A BIT ABOUT THE RIGHT TRADE-OFF BETWEEN TECHNICAL AND NON-TECHNICAL STUFF]]
+
+Formally, for a strictly convex and continuously-differentiable function $f$, the Bregman divergence measures the distance from the value of $f$ at point $t$ and the value of the first-order Taylor expansion of $f$ at point $\hat{t}$, such that
+$$
+\text{BR}'_f(t, \hat{t}) = f(t) - f(\hat{t}) - \partial f(\hat{t})(t - \hat{t}),
+$$
+with $\langle \cdot, \cdot \rangle$ denoting the inner product, and $\partial f$ denoting the derivative of $f$.
+Let the true density ratio function of the synthetic data samples over the observed data samples be defined as
+$$
+r(\boldsymbol{x}) = \frac{p_{syn}(\boldsymbol{x})}{p_{obs}(\boldsymbol{x})}.
+$$
+Approximating the true density ratio function $r(\boldsymbol{x})$ with the density ratio model $\hat{r}(\boldsymbol{x})$, the Bregman divergence is expressed as
+$$
+\text{BR}'_f(r, \hat{r}) = \int p_{obs}(\boldsymbol{\boldsymbol{x}}) \Big(f(r(\boldsymbol{x})) - f(\hat{r}(\boldsymbol{x})))
+- \partial f(\hat{r}(\boldsymbol{x}))(r(\boldsymbol{x}) - \hat{r}(\boldsymbol{x}))\Big) \text{d}\boldsymbol{x}.
+$$
+Accordingly, the true Bregman divergence can be approximated empirically by 
+$$
+\hat{\text{BR}}_f({\hat{r}}) = \frac{1}{n_{obs}} \sum^{n_{obs}}_{i=1} \partial f(\hat{r}(\boldsymbol{x}^{obs}_i))\hat{r}(\boldsymbol{x}^{obs}_i) -
+\frac{1}{n_{obs}} \sum^{n_{obs}}_{i = 1} f(\hat{r}(\boldsymbol{x}^{obs}_i)) - 
+\frac{1}{n_{syn}} \sum^{n_{syn}}_{i'=1} \partial f(\hat{r}(\boldsymbol{x}^{syn}_{i'})),
+$$
+where $n_{obs}$ and $n_{syn}$ denote the sample size of the observed and synthetic data, respectively [for a more elaborate explanation, see Chapter 7 in @sugiyama_suzuki_kanamori_2012]. 
+Accordingly, the following minimization criterion can be defined:
+$$
+\min_{\hat{r}} \hat{BR}_f(\hat{r}).
+$$
+Note that how to minimize this function is dependent on the function $f$.
+
+By choosing the function $f$ in different ways, we can formulate the optimization problem such that it agrees with several density ratio estimation procedures.
+For the sake of brevity, we only show how to formulate the optimization problem such that it corresponds with one specific density ratio estimation technique, called least-squares importance fitting [LSIF\; @kanamori_ulsif_2009], which has favorable theoretical properties.
+However, multiple other density ratio estimation techniques can also be formulated in terms of a member of the Bregman divergence family [for a more extensive discussion, see @sugiyama_bregman_2012].
+If the function $f$ is specified as
+$$
+f(\hat{t}) = \frac{1}{2}(\hat{t} - 1)^2,
+$$
+the Bregman divergence can be reformulated as the squared distance
+$$
+\begin{aligned}
+\text{BR}'_f(t, \hat{t}) &= f(t) - f(\hat{t}) - \partial f(\hat{t})(t - \hat{t}) \\
+&\equiv \frac{1}{2}(t - \hat{t})^2 = \text{SQ}'.
+\end{aligned}
+$$
+Expressing the squared distance between the true density ratio and the density ratio model yields
+$$
+\text{SQ}'(\hat{r}) = \frac{1}{2} \int (\hat{r}(\boldsymbol{x}) - r(\boldsymbol{x}))^2 p_{obs}(\boldsymbol{x}) \text{d}\boldsymbol{x}.
+$$
+Now, dropping $r(\boldsymbol{x})^2$ which is constant with respect to the data, and rewriting $2\hat{r}(\boldsymbol{x})r(\boldsymbol{x})$ as $2\hat{r}(\boldsymbol{x})p_{syn}(\boldsymbol{x})/p_{obs}(\boldsymbol{x})$ yields
+$$
+\text{SQ}'(\hat{r}) = \frac{1}{2} \int \hat{r}(\boldsymbol{x})^2p_{obs}(\boldsymbol{x}) \text{d}\boldsymbol{x} -
+\int r(\boldsymbol{x})p_{syn}(\boldsymbol{x})\text{d}\boldsymbol{x}.
+$$
+Consequently, @kanamori_ulsif_2009 show how the integrals can be approximated with empirical averages, 
+$$
+\hat{\text{SQ}}(\hat{r}) = \frac{1}{2n_{obs}} \sum^{n_{obs}}_{i=1} \hat{r}(\boldsymbol{x}^{obs}_i)^2 - 
+\frac{1}{n_{syn}} \sum^{n_{syn}}_{i'=1} \hat{r}(\boldsymbol{x}^{syn}_i),
+$$
+after which this criterion can be minimized.
+
+To actually minimize this criterion, we need a density ratio model.
+For least-squares importance fitting, @kanamori_ulsif_2009 define the following model
+$$
+\hat{r}(\boldsymbol{x}) = \sum^{b}_{\ell = 1} \theta_{\ell} \psi_{\ell}(\boldsymbol{x}) = \boldsymbol{\psi}(\boldsymbol{x})'\boldsymbol{\theta},
+$$
+with $\boldsymbol{\psi}(\boldsymbol{x})$ a non-negative basis function vector and $\boldsymbol{\theta}$ the vector with parameter estimates.
+Rewriting the estimated squared error in accordance with this density ratio model yields
+$$
+\hat{\text{SQ}}(\boldsymbol{\theta}) = 
+\frac{1}{2n^{obs}}\boldsymbol{\theta}' \boldsymbol{\psi}(\boldsymbol{x}^{obs})'\boldsymbol{\psi}(\boldsymbol{x}^{obs})\boldsymbol{\theta} - \frac{1}{n^{syn}}\boldsymbol{\psi}(\boldsymbol{x})'\boldsymbol{1}_{n^{syn}} + \lambda \boldsymbol{\theta}'\boldsymbol{\theta},
+$$
+where the last term is added for regularization purposes.
+The solution to this optimization problem can be obtained analytically by solving
+$$
+\hat{\boldsymbol{\theta}} = (\frac{1}{n^{obs}}\boldsymbol{\psi}(\boldsymbol{x})' \boldsymbol{\psi}(\boldsymbol{x}) + \lambda \boldsymbol{I}_b)^{-1} \frac{1}{n^{syn}}\boldsymbol{\psi}(\boldsymbol{x})'\boldsymbol{1}_{n^{syn}}.
+$$
+Note that this procedure is called unconstrained least-squares importance fitting, because the solution is unconstrained, potentially resulting in negative density ratio values. 
+This can be accounted for by either setting negative density ratio values to $0$, or by using a convex quadratic program to solve the optimization problem (using an $\ell_1$ regularizer instead of an $\ell_2$ regularizer).
+The regularization parameter $\lambda$, as well potential parameters of the basis functions, can be optimized using cross-validation, by computing the out-of-sample squared error [see @kanamori_ulsif_2009].
+
+Hier nog iets zeggen over dat een gaussian kernel een goede keus is voor basis function, omdat deze goede properties heeft.
+
+Nog toevoegen dat een statistische test gebaseerd op permutaties gedaan kan worden.
+
+
+
+
+# Illustrations of density ratio estimation as a utility measure
+
+Deze tekst moet nog aangepast worden, maar wilde eerst graag weten of de voorbeelden oke zijn. Ik wil ook nog een voorbeeld toevoegen met een lognormale verdelingen die benaderd wordt door een normaalverdeling, maar ik ben nog even bezig met uitzoeken hoe ik dan de variantie en het gemiddelde gelijk krijg (omdat de verwachting van een lognormaalverdeelde variabele een functie is het gemiddelde en de standaarddeviatie op de logschaal). Een alternatief kan ook zijn om iets met een zero-inflated (en dus bimodal) model te doen, omdat dit dan zou voortborduren op de presentatie van Jorg Drechsler bij PSD. 
+
+Verder wil ik ook nog graag een multivariaat voorbeeld toevoegen, maar ik twijfel nog een beetje over de context (misschien iets met aflopende correlaties, zoals Snoke et al. in hun pmse paper doen), maar het kan ook iets met subspaces of dimension reduction zijn (maar vraag me af of het dan niet teveel wordt).
+
+En ik wil graag aan de voorbeelden zoals ze nu zijn nog graag een permutatie-test statistiek toevoegen, zodat we een beetje kunnen classificeren hoe goed de methode het doet. Als dat erbij zit, zitten we denk ik wel aan tien pagina's [VRAAG AAN PP: IS DEZE LIMIET INCLUSIEF OF EXCLUSIEF VOORBLAD EN REFERENTIES?].
+Ook over specific-utility moeten we het dan misschien nog eventjes hebben, want het lijkt me wat veel om dat hier ook nog als voorbeeld in te gooien, dus misschien alleen in de discussie kort bespreken.
+Laten we het hier maandag over hebben!
+
+In the upcoming section, we display how density ratio performs in some typical examples. 
+In the synthetic data field, is easily happens that some complicated data distribution is approximated by a simpler one. 
+For example, when the real data distribution follows a Laplace distribution, it is quite plausible that this data is approximated by some normal distribution. 
+Similarly, it can very well be that data that is distributed according to a $t$-distribution with, say, three degrees of freedom (and thus with relatively fat tails), is approximated by a normal distribution.
+
+```{r, message = FALSE, warning = FALSE, cache = TRUE}
+library(purrr)
+library(densityratio)
+library(ggplot2)
+
+set.seed(123)
+
+nsim <- 50
+n <- 500
+mu <- 1
+sd <- sqrt(2)
+
+x_eval <- seq(-5, 7, length.out = 10000) |> matrix()
+
+
+dlaplace <- function(x, mu = 0, sd = 1) exp(-abs(x-mu)/(sd / sqrt(2))) / (2*(sd / sqrt(2))) 
+rlaplace <- function(n, mu = 0, sd = 1) {
+  p <- runif(n)
+  b <- sd / sqrt(2)
+  mu - b * sign(p - 0.5) * log(1 - 2*abs(p - 0.5))
+}
+dratio <- function(x, mu_norm = 0, mu_laplace = 0, sd_norm = 1, sd_laplace = 1) {
+  dnorm(x, mu_norm, sd_norm) / dlaplace(x, mu_norm, sd_norm)
+}
+
+lap_norm <- map(1:nsim, function(x) {
+  normal <- rnorm(n, mu, sd)
+  laplace <- rlaplace(n, mu, sd)
+  ratio <- ulsif(normal, laplace, ncenters = 100, nsigma = 10, nlambda = 10, progressbar = FALSE)
+  predict(ratio, newdata = x_eval)
+})
+
+ggplot() +
+  geom_line(mapping = aes(x = rep(x_eval, nsim), 
+                          y = unlist(lap_norm), 
+                          group = rep(1:nrow(x_eval), each = nsim) |> factor()),
+            alpha = 0.2, col = "darkgreen") +  
+  stat_function(fun = dratio,
+                args = list(mu_norm = mu, mu_laplace = mu, sd_norm = sd, sd_laplace = sd)) +
+    theme_minimal()
+
+mean_rlnorm <- log(log(exp(1) / sqrt(1 + 2 / exp(2 * 1))))
+sd_rlnorm <- sqrt(log(1 + 2 / exp(2 * 1)))
+
+dratio_norm_t <- function(x, mu = 0, df = 4) {
+  dnorm(x - mu, 0, sqrt(df / (df-2))) / dt(x - mu, df)
+}
+
+t_norm <- map(1:nsim, function(x) {
+  normal <- rnorm(n, 1, sqrt(2))
+  t <- rt(n, 4) + 1
+  ratio <- ulsif(normal, t, ncenters = 100, nsigma = 10, nlambda = 10, progressbar = FALSE)
+  predict(ratio, newdata = x_eval)
+})
+
+ggplot() +
+  geom_line(mapping = aes(x = rep(x_eval, nsim), 
+                          y = unlist(t_norm), 
+                          group = rep(1:nrow(x_eval), each = nsim) |> factor()),
+            alpha = 0.2, col = "darkgreen") +  
+  stat_function(fun = dratio_norm_t,
+                args = list(mu = 1, df = 4)) +
+    theme_minimal()
+
+norm_norm <- map(1:nsim, function(x) {
+  normal1 <- rnorm(n, 1, sqrt(2))
+  normal2 <- rnorm(n, 1, sqrt(2))
+  ratio <- ulsif(normal1, normal2, ncenters = 100, nsigma = 10, nlambda = 10, progressbar = FALSE)
+  predict(ratio, newdata = x_eval)
+})
+
+ggplot() +
+  geom_line(mapping = aes(x = rep(x_eval, nsim), 
+                          y = unlist(norm_norm), 
+                          group = rep(1:nrow(x_eval), each = nsim) |> factor()),
+            alpha = 0.2, col = "darkgreen") +  
+  geom_abline(intercept = 1, slope = 0) +
+  theme_minimal()
 ```
 
 ```{r}
@@ -110,5 +282,13 @@ In fact, the Kullback-Leibler divergence is a special case of the more general c
 # 
 # multivariate normal versus something else
 ```
+
+# Discussion
+
+Number of centers
+
+Model selection
+
+Dealing with categorical variables
 
 # References
