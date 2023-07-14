@@ -1,17 +1,21 @@
 \usepackage{template/style/UNECE2023}
 \usepackage{enumerate}
 \usepackage{xcolor}
+\usepackage{float}
+\floatplacement{table}{b}
 \definecolor{unece_color}{RGB}{84, 141, 212}
 
 %% the title of your contribution in capital letters:
 \newcommand{\TITLE}{\textbf{ASSESSING THE UTILITY OF SYNTHETIC DATA: A DENSITY RATIO PERSPECTIVE} \\}
 
 %% author:
-\newcommand{\AUTHOR}{Thom Benjamin Volker (Utrecht University, the Netherlands; Statistics Netherlands, the Netherlands)\\Erik-Jan van Kesteren (Utrecht University, the Netherlands)}
+\newcommand{\AUTHOR}{Thom Benjamin Volker (Utrecht University, the Netherlands; Statistics Netherlands, the Netherlands)\\Peter-Paul de Wolf (Statistics Netherlands, the Netherlands)\\Erik-Jan van Kesteren (Utrecht University, the Netherlands)}
 
 %% your organisation
 % \newcommand{\ORGANISATION}{\textsuperscript{1} (Utrecht University, the Netherlands), \textsuperscript{2} (Statistics Netherlands, the Netherlands)}
-\newcommand{\EMAIL}{\href{mailto:t.b.volker@uu.nl}{t.b.volker@uu.nl}, \href{mailto:e.vankesteren1@uu.nl}{e.vankesteren1@uu.nl}}
+\newcommand{\EMAIL}{\href{mailto:t.b.volker@uu.nl}{t.b.volker@uu.nl}, \href{mailto:pp.dewolf@cbs.nl}{pp.dewolf@cbs.nl}, \href{mailto:e.vankesteren1@uu.nl}{e.vankesteren1@uu.nl}}
 
 %% abstract
-\newcommand{\ABSTRACT}{High quality synthetic data can be a solution to overcome disclosure risks that arise when disseminating research data to the public. However, for inferential purposes, the usefulness of the synthetic data largely depends on whether the synthetic data model approximates the distribution of the observed data close enough. Often, multiple candidate models are considered and improvements are made iteratively. Evaluating the utility of the synthetic data after the model building steps is a crucial but complicated endeavor, and although many methods exist, their results may tell an incomplete story. We propose to evaluate the utility of synthetic data using density ratio estimation techniques, which allows to embed both general and specific utility measures into a common framework. Using techniques from the density ratio estimation field, we show how an interpretable global utility measure can be obtained from the ratio of the observed and synthetic data densities that can even be used to express the utility of individual (synthetic) data points. Applying these techniques on (an approximation to the) posterior distributions of parameters gives rise to analysis-specific utility measures. Using empirical examples, we show that framing utility from a density ratio perspective improves on existing global utility measures. Lastly, we implemented the procedure along with existing utility measures in an R-package.}
+\newcommand{\ABSTRACT}{Synthetic data can be a solution to reduce disclosure risks that arise when disseminating research data to the public. However, for the synthetic data to be useful for general inferential purposes, it is paramount that its distribution is similar to the distribution of the observed data. Often, data disseminators consider multiple synthetic data models and make refinements in an iterative fashion. After each adjustment, it is crucial to evaluate whether the quality of the synthetic data has actually improved. Although many methods exist to provide such an evaluation, their results are often incomplete or even misleading. To improve the evaluation strategy for synthetic data, and thereby the quality of synthetic data itself, we propose to use the density ratio estimation framework. Using techniques from this field, we show how an interpretable utility measure can be obtained from the ratio of the observed and synthetic data densities. We show how the density ratio estimation framework bridges the gap between fit-for-purpose and global utility measures, and discuss how it can also be used to evaluate analysis-specific utility. Using empirical examples, we show that density ratio estimation improves on existing (global) utility measures by providing higher statistical power and offering a fine-grained view of discrepancies between the observed and synthetic data. Moreover, we describe several additional advantages of the approach, such as providing a measure of utility on the level of individual synthetic data points, automatic model selection without requiring user specification, and readily available high-dimensional extensions. We conclude that density ratio estimation provides a promising framework in synthetic data generation workflows and present an R-package with functionality to implement the approach.}
+
+

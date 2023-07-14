@@ -1,10 +1,8 @@
-base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
-purrr
-densityratio
 ggplot2
+patchwork
+purrr
+future
+furrr
+densityratio
+dplyr
+synthpop

@@ -4,9 +4,11 @@ format:
     documentclass: template/style/uneceart
     include-in-header: 
       - file: preamble.tex
+    keep-tex: true
 pdf-engine: pdflatex
 bibliography: template/UNECE_template_2023SDC.bib
 link-citations: true
+df-print: kable
 ---
 
 \input{template/UNECE2023cover.tex}
@@ -18,198 +20,304 @@ link-citations: true
 # Introduction
 
 In recent years, the academic interest in synthetic data has exploded. 
-Synthetic data is increasingly being used as a solution to overcome privacy and confidentiality issues that are inherently linked to the dissemination of research data. 
+Synthetic data are increasingly being used as a solution to overcome privacy and confidentiality issues that are inherently linked to the dissemination of research data. 
 National statistical institutes and other government agencies have started to disseminate synthetic data to the public while restricting access to the original data to protect sensitive information [e.g., @SIPP_Beta_2006; @hawala_synthetic_2008; @drechsler2012]. 
-At the same time, researchers start to share a synthetic version of their research data to comply with open science standards [e.g., @vandewiel2023; @obermeyer2019; @zettler2021]. 
-Rather than sharing the original research data, a synthetic surrogate is shared to facilitate reviewing the data processing and analysis pipeline. 
+At the same time, researchers began to share synthetic versions of their research data to comply with open science standards [e.g., @vandewiel2023; @obermeyer2019; @zettler2021]. 
+Rather than sharing the original research data, a synthetic surrogate is shared to facilitate reviewing of the data processing and analysis pipeline. 
 Additionally, synthetic data is increasingly being used for training machine learning models [@nikolenko2021]. 
-On a lower level, synthetic data can be used in model testing pipelines (before access to the real data is provided), for data exploration (misschien YOUTH citeren all), and for educational purposes.
+On a lower level, synthetic data can be used in model testing pipelines (before access to the real data is provided), for data exploration, and for educational purposes.
 
-In short, the general idea of synthetic data is to substitute values from the collected data with synthetic values that are generated from a model. 
-In this way, it is possible to generate an entirely new synthetic data set [commonly referred to as the *fully* synthetic data approach; @rubin_statistical_1993], but one could also replace only those values that would yield a high risk of disclosure when released [called *partially* synthetic data; @little_statistical_1993]. 
-Both approaches essentially attempt to build a model that incorporates as much of the information in the real data as possible. 
+At its core, the idea of synthetic data is to replace values from the observed data with new values that are generated from a model.
+In this way, it is possible to generate an entirely new synthetic data set [commonly referred to as the *fully* synthetic data approach\; @rubin_statistical_1993], but also to replace just those values that are sensitive or that would yield a high risk of disclosure when released [an approach called *partially* synthetic data\; @little_statistical_1993]. 
+Both approaches attempt to build a model that incorporates as much of the information in the real data as possible, given a pre-specified privacy risk level that is still deemed acceptable.
 The models used to generate synthetic data were originally closely related to methods used for multiple imputation of missing data, such as fully conditional specification [@volker2021] or sequential regression [@nowok2016]. 
-Recently, significant improvements in generative modelling in combination with work on formal privacy guarantees sparked the development of a great deal of novel methods in the computer science community [e.g., @patki2016; @xu_ctgan_2019]. 
-Through these developments, the quality of synthetic data improved significantly, and while the notion of using fake data for research purposes was originally regarded as laughable, it is nowadays increasingly being used in practice.
+Recently, significant improvements in generative modelling sparked the scientific interest in synthetic data in the computer science community, leading to novel synthesis methods [e.g., @patki2016; @xu_ctgan_2019].
+Combined with work on formal privacy guarantees, this resulted in new models that explicitly control the level of privacy risk in synthesis methods [@jordon2018pategan; @Torkzadehmahani2019].
+Through both methodological advances and practical implementations, data synthesis has evolved into an increasingly popular approach to enhance data dissemination.
 
-The main challenge when generating synthetic data is to adequately balance the privacy leakage with the utility (i.e., quality) of the synthetic data. 
-On the upper limit of this privacy-utility trade-off, the synthesis model is so good (or, rather, bad), that the real data is exactly reproduced, resulting in the same privacy loss as when disseminating the real data. 
+
+Regardless of these developments, the main challenge when generating synthetic data remains to adequately balance the privacy risk with the utility (i.e., quality) of the synthetic data. 
+On the upper limit of this privacy-utility trade-off, the synthesis model captures the information in the observed data so precisely that the real data is exactly reproduced, resulting in the same privacy loss as when disseminating the real data. 
 In statistical terms, the synthesis model is overparameterized to such an extent that there are no degrees of freedom left, and there is thus no randomness involved in the generation of the synthetic values. 
 On the lower limit of the trade-off, synthetic values are generated without borrowing any information from the real data. 
 For example, we could place the value $0$ or a random draw from a standard normal distribution for every record and every variable, such that the synthetic data contains only noise. 
-A synthesis model usually sits somewhere between these two extremes, and contains some information from the real data, which implies that the synthetic data resembles the real data to some extent, yielding more than zero utility, but also some disclosure risk. 
-The data provider typically wants to know what privacy loss is incurred by disseminating the synthetic data, while the user wants to know whether any analysis can be reliably performed. 
-At the same time, knowledge about the utility can help the data provider to improve the quality of the synthesis model. Hence, the synthetic data provider is left with the complicated task of qualifying where on this continuum the synthetic data is located.
+Synthetic data sets sit somewhere between these extremes: they contain some information from the real data, yielding some disclosure risk, but they also resemble the real data to some extent, yielding more than zero utility. 
+Because not all information is captured, the utility of the synthetic data will always be lower than the utility of the real data. 
+The question that naturally arises is where on the privacy-utility continuum the synthetic data is located: how much information is sacrificed, and which aspects of the real data are reproduced in the synthetic data. 
+From the perspective of the data provider, it is important to know how informative the released data is, while the user wants to know whether their analysis can be reliably performed. 
+Additionally, the data provider can use knowledge about the utility to finetune the synthesis model and improve the synthetic data quality.
 
-Based on this privacy-utility trade-off, it seems obvious that any attempt of data synthesis results in the loss of information. 
-Accordingly, the utility of the synthetic data will always be lower than the utility of the real data. 
-The questions that naturally arise are how much information is sacrificed, and how much the synthetic data deviates from the observed data. 
-In the synthetic data literature, three classes of utility measures have been distinguished [for a thorough review of these measures, see @drechsler2023]: fit-for-purpose measures, analysis-specific utility measures and global utility measures. 
-Fit-for-purpose measures are typically the first step in assessing the quality of the synthetic data. They typically involve comparing the univariate distributions of the observed and synthetic data (for example using visualization techniques or goodness-of-fit measures). 
-Although very useful to get an initial impression of the quality of the data synthesis models used, this picture is by definition limited, because only one or two variables variables are assessed at the same time. 
+
+To evaluate the utility of synthetic data, three classes of utility measures have been distinguished [for a thorough review of these measures, see @drechsler2023]: fit-for-purpose measures, global utility measures, and analysis-specific utility measures. 
+Fit-for-purpose measures are often the first step in assessing the quality of the synthetic data. 
+They typically involve comparing the univariate distributions of the observed and synthetic data (for example using visualization techniques or goodness-of-fit measures). 
+Although these measures provide an initial impression of the quality of the synthesis models used, this picture is by definition limited, because only one or two variables are assessed at the same time. 
 Hence, complex relationships between variables will always be out of scope. 
-Global utility measures build up on the fit-for-purpose measures, by comparing the distribution of the synthetic data with the distribution of the observed data in a more general way. 
-This can be done using some distance measure [e.g., the Kullback-Leibler divergence; see @karr_utility_2006], but also by estimating how well a prediction model can distinguish between the observed and synthetic data, and using the predicted probabilities [propensity scores; @rosenbaum_propensity_scores_1983] as a measure of discrepancy [e.g., the propensity score mean squared error, $pMSE$; @Woo_global_2009; @snoke_utility_2018]. 
-While global utility measures paint a rather complete picture, that is, over the entire range of the data, they tend to be too general.
-That is, global utility measures can be so broad that important discrepancies between the real and synthetic data can be missed, and an a synthetic data set with high global utility might still yield analyses with results that are far from the results from real data analyses [see @drechsler_utility_2022]. 
+Global utility measures build on the fit-for-purpose measures, but attempt to capture the quality of the entire multivariate distribution of the synthetic data relative to the observed data in a single, global, indicator. 
+This can be done using some distance measure [e.g., the Kullback-Leibler divergence\; see @karr_utility_2006], but also by estimating how well a prediction model can distinguish between the observed and synthetic data, using the predicted probabilities [propensity scores\; @rosenbaum_propensity_scores_1983] as a measure of discrepancy [e.g., the propensity score mean squared error, $pMSE$\; @Woo_global_2009; @snoke_utility_2018]. 
+While global utility measures paint a rather complete picture, and provide information over the entire range of the data, they tend to be too general.
+That is, global utility measures can be so broad that important discrepancies between the real and synthetic are missed, and a synthetic data set with high global utility might still yield analyses with results that are far from the results from real data analyses [see @drechsler_utility_2022]. 
 Lastly, the analysis-specific utility measures quantify to what extent analyses performed on the synthetic data align with the same analyses on the observed data. 
-These measures can evaluate to what degree the coefficients of a regression model are similar [e.g., using the confidence interval overlap; @karr_utility_2006], but also to what extent prediction models trained on the synthetic and observed data are perform similarly in terms of evaluation metrics. 
-However, also these measures have important shortcomings. 
-Analysis-specific utility generally does not carry over, even not to closely related analyses: high specific utility for one analysis does not at all imply high utility for another analysis. 
-Since data providers typically do not know which analyses will be performed with the synthetic data, it is impossible to provide analysis-specific utility measures for all potentially relevant analyses [for a more thorough discussion, see @drechsler_utility_2022].
+These measures can, for example, evaluate how similar the coefficients of a regression model are [e.g., using the confidence interval overlap\; @karr_utility_2006], or whether prediction models trained on the synthetic and observed data perform comparably in terms of evaluation metrics. 
+However, analysis-specific utility generally does not carry over: high specific utility for one analysis does not at all imply high utility for another analysis. 
+Since data providers typically do not know which analyses will be performed with the synthetic data, it is impossible to provide analysis-specific utility measures for all potentially relevant analyses [see also @drechsler_utility_2022].
 
-From the other perspective on the privacy-utility trade-off, that is, the privacy-side, several promising advances have been made with respect to building formal privacy guarantees into the data generation mechanism through differential privacy (CITE DWORK; CITE DP-SYNTHESIS METHOD). 
-In addition to these privacy-by-design mechanisms, some measures exist to quantify privacy loss of synthetic data after generation. 
+In this paper, we propose to use the framework of density ratio estimation [@sugiyama_suzuki_kanamori_2012] to place all above measures under a common umbrella. 
+We show empirically that this approach performs at least as well as various existing utility measures, while providing a more fine-grained view of the misfit of the synthetic data.
+Moreover, the typically non-parametric nature of density ratio estimation in combination with automatic model selection mitigates the burden around model specification of existing utility measures as the $pMSE$.
+In short, density ratio estimation compares the (multivariate) distributions of two data sets (e.g., two different samples or groups) by directly estimating the ratio of their densities.
+Crucially, this method does not estimate the densities of the observed and synthetic data separately, subsequently taking their ratio, but estimates the density ratio directly, which has been shown to yield better performance [e.g., @kanamori_ulsif_2009]. 
+The idea is that if two data sets are drawn from the same data-generating mechanism, the sampled data should be similar, and the ratio of their densities should be close to one over the entire multivariate space.
+This approach readily extends from univariate to bivariate and multivariate densities, and thus bridges the gap between fit-for-purpose and global utility measures.
+Moreover, we briefly discuss how density ratio estimation can be used to compare the distributions of parameters of observed and synthetic data, to incorporate analysis-specific utility measures as well. 
+Hence, we show that it is a versatile approach that is useful in the entire domain of data utility.
+
+
+Also from the privacy-side several promising advances have been made to quantify the amount of information leakage through the synthetic data. 
+Important work has been done to build formal privacy guarantees into the synthesis models through differential privacy [@dwork_dp_2006].
+In addition to these privacy-by-design mechanisms, some measures exist to quantify privacy loss of synthetic data after generation [e.g., @mcclure2016assessing; @Reiter_Mitra_2009; @hu2019]. 
 However, the practical applicability of these measures depends on whether the data is fully or partially synthetic, and especially in case of the former, the practical applicability of these measures is often limited [for an extensive discussion of these issues, see @drechsler2023]. 
-More research on measures to evaluate disclosure risks in synthetic is thus certainly needed, but the current paper focuses on utility measures for synthetic data.
+More research on measures to evaluate disclosure risks in synthetic data is thus certainly needed, but in this paper we focus exclusively on measuring utility.
 
-Specifically, we illustrate a group of methods under the umbrella of density ratio estimation [for a thorough evaluation of work done is this area, see @sugiyama_suzuki_kanamori_2012] for assessing synthetic data utility that incorporates fit-for-purpose, global and analysis-specific utility measures. 
-In short, the framework of density ratio estimation attempts to compare the multivariate distributions of two data sets (e.g., two different samples or groups) by directly estimation the ratio of their densities. 
-The idea is that if two data sets are drawn from the same data-generating mechanism, their densities should be similar, and the ratio of their densities should thus be close to one at all possible points in the multivariate space. 
-This approach easily extends from univariate to bivariate and multivariate densities. As such, it bridges the gap between fit-for-purpose and global utility measures. 
-Moreover, a density ratio can also be estimated for the posterior distributions of parameters, and thus also incorporates specific utility measures. 
-The only requirement of density ratio estimation is that there are samples (e.g., observations, samples from a posterior) from the observed and synthetic data (or parameter) distributions, or that these distributions can be approximated, for example with a (multivariate) normal distribution. 
-It is not required to assume some parametric distribution, but in cases where no samples are available, it can help to simplify the process of estimation the density ratio. 
-Note that density ratio estimation deliberately does not entail estimating the densities of the observed and synthetic data separately, and taking their ratio. 
-Estimating the probability distribution of a data set is one of the hardest challenges in statistics, unavoidably resulting in estimation errors. 
-When performing this task for two data sets, and subsequently taking the ratio, may magnify the estimation errors, resulting in a poorer estimate of the density ratio then necessary when directly estimating the density ratio.
-
-In what follows, we describe the density ratio estimation framework, summarizing some of the work done in this area. 
-We will briefly relate the method to existing utility measures, and describe how existing utility measures either fall under the umbrella of density ratio estimation, or are related to those. 
-Subsequently, we will illustrate how the method can be used in practice by providing multiple examples. Lastly, we will discuss shortcomings of the method and relate these to avenues for future work.
+In what follows, we describe the density ratio estimation framework by summarizing some of the work in this area, and show how it provides a useful framework for measuring utility of synthetic data. 
+Subsequently, we illustrate how the method can be used in practice by providing multiple examples, and empirically compare its performance to existing utility measures. 
+Lastly, we discuss how density ratio estimation relates to existing utility measures, describe current shortcomings of the approach and relate these shortcomings to avenues for future work. 
 
 # Density ratio estimation
 
-The framework of density ratio estimation was originally developed in the machine learning community for the comparison of two probability distributions [for an overview, see @sugiyama_suzuki_kanamori_2012]. 
-The framework has been shown to be applicable for prediction [@sugiyama_conditional_2010; @sugiyama_classification_2010], outlier detection [@shohei_dre_outlier_2008], change-point detection in time-series [@liu_change_2013], importance weighting under domain adaptation [or, in statistical terms, sample selection bias; @kanamori_ulsif_2009], and, importantly, two-sample homogeneity tests [@sugiyama_lstst_2011]. 
-Regardless of the exact goal, the idea is to compare two distributions by estimating the density ratio $r(\boldsymbol{x})$ between the probability distributions of the numerator samples, which we take to be the synthetic data samples, $p_{syn}(\boldsymbol{x})$, and the denominator samples, which we take to be the observed data samples, $p_{obs}(\boldsymbol{x})$. 
-A naive approach would be to estimate the observed and synthetic data density separately, for example using kernel density estimation [REF], and subsequently compute the ratio from these estimated densities. 
-However, density estimation is one of the hardest tasks in statistical learning, and is prone to estimation errors that would affect both estimated densities. 
-When subsequently taking the ratio of the estimated densities, the estimation errors might be magnified, and the validity of the resulting density ratio might be lower than strictly necessary. 
-In fact, extensive simulations on a wide variety of tasks showed that directly estimating the density ratio typically outperforms naive kernel density estimation, especially when the dimensionality of the data increases [e.g., @Kanamori2012; @shohei_dre_outlier_2008; @kanamori_ulsif_2009].
-
-Over the past years, several methods for direct density ratio estimation have been developed, that typically employ some divergence measure to estimate the distance from the density ratio model to the true density ratio function. 
-To keep the discussion general, we focus here on a class of methods that employ the *Bregman* divergence to quantify this distance [for a thorough review and technical discussion, see @sugiyama_bregman_2012]. 
-In some sense, this framework bears some resemblance to model selection using information criteria (e.g., Akaike's information criterion), where the distance from a statistical model to the true data-generating mechanism is estimated (e.g., by relying on an estimate of the Kullback-Leibler divergence). 
-In fact, the Kullback-Leibler divergence is a special case of the more general class of Bregman divergences, and one of the density ratio estimation techniques [the Kullback-Leibler importance estimation procedure\; @sugiyama2008] relies on the Kullback-Leibler divergence to estimate the density ratio function.
-Other special cases of the Bregman divergence include the Euclidean distance and the Mahalanobis distance.
-
-HIER PLAATJE TOEVOEGEN VAN DENSITY RATIO ESTIMATION
-
-[[COMMENT: TO BE FAIR, IM NOT SO SURE HERE ABOUT ALL TECHNICALITIES IN THE UPCOMING SECTION. PERHAPS IT'S BETTER TO LEAVE THESE OUT, AND JUST DISCUSS THE GENERAL IDEA WITHOUT GOING INTO THE DETAILS. I'M STILL SEEKING A BIT ABOUT THE RIGHT TRADE-OFF BETWEEN TECHNICAL AND NON-TECHNICAL STUFF]]
-
-Formally, for a strictly convex and continuously-differentiable function $f$, the Bregman divergence measures the distance from the value of $f$ at point $t$ and the value of the first-order Taylor expansion of $f$ at point $\hat{t}$, such that
-$$
-\text{BR}'_f(t, \hat{t}) = f(t) - f(\hat{t}) - \partial f(\hat{t})(t - \hat{t}),
-$$
-with $\langle \cdot, \cdot \rangle$ denoting the inner product, and $\partial f$ denoting the derivative of $f$.
-Let the true density ratio function of the synthetic data samples over the observed data samples be defined as
+The density ratio estimation framework was originally developed in the machine learning community for the comparison of two probability distributions [for an overview, see @sugiyama_suzuki_kanamori_2012]. 
+The framework has been shown to be applicable to prediction [@sugiyama_conditional_2010; @sugiyama_classification_2010], outlier detection [@shohei_dre_outlier_2008], change-point detection in time-series [@liu_change_2013], importance weighting under domain adaptation [i.e., sample selection bias\; @kanamori_ulsif_2009], and, importantly, two-sample homogeneity tests [@sugiyama_lstst_2011]. 
+The general idea of density ratio estimation is depicted in @fig-dr-plot, and boils down to comparing two distributions by modelling the density ratio $r(\boldsymbol{x})$ between the probability distributions of the numerator samples, taken from the synthetic data distribution, $p_{syn}(\boldsymbol{x})$, and the denominator samples, taken from the observed data distribution, $p_{obs}(\boldsymbol{x})$, such that
 $$
 r(\boldsymbol{x}) = \frac{p_{syn}(\boldsymbol{x})}{p_{obs}(\boldsymbol{x})}.
-$$
-Approximating the true density ratio function $r(\boldsymbol{x})$ with the density ratio model $\hat{r}(\boldsymbol{x})$, the Bregman divergence is expressed as
-$$
-\text{BR}'_f(r, \hat{r}) = \int p_{obs}(\boldsymbol{\boldsymbol{x}}) \Big(f(r(\boldsymbol{x})) - f(\hat{r}(\boldsymbol{x})))
-- \partial f(\hat{r}(\boldsymbol{x}))(r(\boldsymbol{x}) - \hat{r}(\boldsymbol{x}))\Big) \text{d}\boldsymbol{x}.
-$$
-Accordingly, the true Bregman divergence can be approximated empirically by 
-$$
-\hat{\text{BR}}_f({\hat{r}}) = \frac{1}{n_{obs}} \sum^{n_{obs}}_{i=1} \partial f(\hat{r}(\boldsymbol{x}^{obs}_i))\hat{r}(\boldsymbol{x}^{obs}_i) -
-\frac{1}{n_{obs}} \sum^{n_{obs}}_{i = 1} f(\hat{r}(\boldsymbol{x}^{obs}_i)) - 
-\frac{1}{n_{syn}} \sum^{n_{syn}}_{i'=1} \partial f(\hat{r}(\boldsymbol{x}^{syn}_{i'})),
-$$
-where $n_{obs}$ and $n_{syn}$ denote the sample size of the observed and synthetic data, respectively [for a more elaborate explanation, see Chapter 7 in @sugiyama_suzuki_kanamori_2012]. 
-Accordingly, the following minimization criterion can be defined:
-$$
-\min_{\hat{r}} \hat{BR}_f(\hat{r}).
-$$
-Note that how to minimize this function is dependent on the function $f$.
+$$ {#eq-dr}
+This specification has the intuitive interpretation that if the density ratio is large, too many synthetic values will be generated in that region, whereas if the density ratio is small, there will be too few synthetic observations, both relative to the observed data. 
+An intuitive approach to estimating $r(\boldsymbol{x})$ from samples of $p_{obs}(\boldsymbol{x})$ and $p_{syn}(\boldsymbol{x})$ would be to estimate the observed and synthetic data density separately, for example using kernel density estimation [@Scott1992], and subsequently compute the ratio of these estimated densities. 
+However, density estimation is one of the hardest tasks in statistical learning, unavoidably leading to estimation errors for both densities. 
+When subsequently taking the ratio of the estimated densities, the estimation errors might be magnified, resulting in a poorer estimate of the density ratio than necessary as compared to direct estimation. 
+An alternative is to specify and estimate a model directly for the ratio without first estimating the separate densities. 
+Extensive simulations on a wide variety of tasks showed that this approach typically outperforms density ratio estimation through naive kernel density estimation, especially when the dimensionality of the data increases [e.g., @Kanamori2012; @shohei_dre_outlier_2008; @kanamori_ulsif_2009].
 
-By choosing the function $f$ in different ways, we can formulate the optimization problem such that it agrees with several density ratio estimation procedures.
-For the sake of brevity, we only show how to formulate the optimization problem such that it corresponds with one specific density ratio estimation technique, called least-squares importance fitting [LSIF\; @kanamori_ulsif_2009], which has favorable theoretical properties.
-However, multiple other density ratio estimation techniques can also be formulated in terms of a member of the Bregman divergence family [for a more extensive discussion, see @sugiyama_bregman_2012].
-If the function $f$ is specified as
+
+```{r}
+#| label: fig-dr-plot
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-dpi: 500
+#| fig-cap: "Example of the density ratio of two normal distributions with different means and variances (i.e., $N(0,1)$ and $N(1,2)$). Note that the density ratio is itself not a proper density."
+#| out-width: 100%
+#| fig-height: 1.8
+#| fig-pos: t
+#| dev: cairo_pdf
+
+library(ggplot2)
+library(patchwork)
+extrafont::loadfonts(quiet = TRUE)
+
+ggplot() +
+  stat_function(aes(col = "A"), 
+                fun = dnorm, args = list(mean = 0, sd = 1),
+                size = 0.5) +
+  stat_function(aes(col = "B"),
+                fun = dnorm, args = list(mean = 1, sd = sqrt(2)),
+                size = 0.5) +
+  scale_color_brewer(labels = c("A" = expression(italic(N)(0,1)),
+                                "B" = expression(italic(N)(1,2))),
+                     palette = "Set2",
+                     name = "") +
+  xlim(-4, 6) +
+  ylim(0, 0.5) +
+  ylab("Density") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10"),
+        legend.background = element_blank()) +
+ggplot() +
+  stat_function(aes(col = "C"),
+                fun = ~ dnorm(.x, 0, 1) / dnorm(.x, 1, sqrt(2)),
+                size = 0.5) +
+  scale_color_manual(labels = c("C" = expression(italic(N)(0,1)/italic(N)(1,2))),
+                     values = c("black"),
+                     name = "") +
+  xlim(-4, 6) +
+  ylim(0, 2.5) +
+  theme_minimal() +
+  ylab("Density ratio") +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10"))
+```
+
+Over the past years, several methods for direct density ratio estimation have been developed.
+Typically, these methods aim to minimize some discrepancy $\mathscr{D}(r(\boldsymbol{x}), \hat{r}(\boldsymbol{x}))$ between the true density ratio and some density ratio model. 
+One commonly used discrepancy measure is the following squared error 
 $$
-f(\hat{t}) = \frac{1}{2}(\hat{t} - 1)^2,
+\mathcal{S}_0(r(\boldsymbol{x}), \hat{r}(\boldsymbol{x})) = 
+\frac{1}{2} \int (\hat{r}(\boldsymbol{x}) - r(\boldsymbol{x}))^2 p_{obs}(\boldsymbol{x}) d\boldsymbol{x},
+$$ {#eq-squared-error}
+which can be considered as the expected discrepancy between the two functions over the density of the observed data.
+One could also use other discrepancy measures, such as the binary or unnormalized Kullback-Leibler divergence or Basu's power divergence [which are all members of the family of Bregman divergences\; for a detailed discussion, see @sugiyama_bregman_2012].
+It is convenient to model the density ratio with a linear model, such that
 $$
-the Bregman divergence can be reformulated as the squared distance
+\hat{r}(\boldsymbol{x}) = \boldsymbol{\varphi}(\boldsymbol{x})\boldsymbol{\theta},
+$$ {#eq-dr-estimate}
+where $\boldsymbol{\varphi}(\boldsymbol{x})$ is a non-negative basis function vector that transforms the data from a $p$-dimensional to a $b$-dimensional space, and $\boldsymbol{\theta}$ is a $b$-dimensional parameter vector.
+Although the model is linear in its parameters, the density ratio itself is a non-linear function of the data if $\boldsymbol{\varphi}(\boldsymbol{x})$ is a non-linear transformation of the data, which it typically is.
+
+
+To illustrate the idea of density ratio estimation, we briefly review one method from the field: unconstrained least squares importance fitting [@kanamori_ulsif_2009], which will also be used in our illustrations in the upcoming section.
+The authors show that the squared error can be rewritten as
 $$
 \begin{aligned}
-\text{BR}'_f(t, \hat{t}) &= f(t) - f(\hat{t}) - \partial f(\hat{t})(t - \hat{t}) \\
-&\equiv \frac{1}{2}(t - \hat{t})^2 = \text{SQ}'.
+\mathcal{S}_0(r(\boldsymbol{x}), \hat{r}(\boldsymbol{x})) &=
+\frac{1}{2}\int \hat{r}(\boldsymbol{x})^2p_{obs}(\boldsymbol{x}) d \boldsymbol{x} -
+\int \hat{r}(\boldsymbol{x})r(\boldsymbol{x})p_{obs}(\boldsymbol{x})d\boldsymbol{x} + 
+\frac{1}{2} \int r(\boldsymbol{x})^2 p_{obs}(\boldsymbol{x}) d\boldsymbol{x} \\
+&= \frac{1}{2} \int \hat{r}(\boldsymbol{x})^2 p_{obs}(\boldsymbol{x}) d\boldsymbol{x} -
+\int \hat{r}(\boldsymbol{x}) p_{syn}(\boldsymbol{x}) d \boldsymbol{x} + C,
 \end{aligned}
+$$ {#eq-sq-err-rewritten}
+where $r(\boldsymbol{x})$ in the second term on the first line is rewritten in terms of the ratio of $p_{syn}(\boldsymbol{x})$ over $p_{obs}(\boldsymbol{x})$. 
+After dropping the irrelevant (with respect to the data) constant $C$, and substituting the density ratio model as defined in @eq-dr-estimate, we have
 $$
-Expressing the squared distance between the true density ratio and the density ratio model yields
+\begin{aligned}
+\mathcal{S}(r(\boldsymbol{x}), \hat{r}(\boldsymbol{x})) &=
+\frac{1}{2} \int 
+\boldsymbol{\theta}'
+\boldsymbol{\varphi}(\boldsymbol{x})' 
+\boldsymbol{\varphi}(\boldsymbol{x})
+\boldsymbol{\theta}
+p_{obs}(\boldsymbol{x}) 
+d \boldsymbol{x}
+- \int \boldsymbol{\varphi}(\boldsymbol{x}) \boldsymbol{\theta} p_{syn}(\boldsymbol{x}) d \boldsymbol{x}
+\end{aligned}
+$$ {#eq-objective-int}
+as the objective function.
+The integrals in @eq-objective-int are typically not available, but can be replaced by empirical averages, such that
 $$
-\text{SQ}'(\hat{r}) = \frac{1}{2} \int (\hat{r}(\boldsymbol{x}) - r(\boldsymbol{x}))^2 p_{obs}(\boldsymbol{x}) \text{d}\boldsymbol{x}.
+\hat{\mathcal{S}}(r(\boldsymbol{x}), \hat{r}(\boldsymbol{x})) =
+\frac{1}{2} \boldsymbol{\theta}' 
+\Bigg(\frac{1}{n_{obs}}
+\boldsymbol{\varphi}(\boldsymbol{x}_{obs})'\boldsymbol{\varphi}(\boldsymbol{x}_{obs})
+\Bigg) \boldsymbol{\theta} -
+\Bigg(
+\frac{1}{n_{syn}} \boldsymbol{\varphi}(\boldsymbol{x}_{syn})' \boldsymbol{1}_{n_{syn}}
+\Bigg)' \boldsymbol{\theta}.
+$$ {#eq-objective}
+It follows directly that the parameter vector $\boldsymbol{\theta}$ can be estimated as
 $$
-Now, dropping $r(\boldsymbol{x})^2$ which is constant with respect to the data, and rewriting $2\hat{r}(\boldsymbol{x})r(\boldsymbol{x})$ as $2\hat{r}(\boldsymbol{x})p_{syn}(\boldsymbol{x})/p_{obs}(\boldsymbol{x})$ yields
-$$
-\text{SQ}'(\hat{r}) = \frac{1}{2} \int \hat{r}(\boldsymbol{x})^2p_{obs}(\boldsymbol{x}) \text{d}\boldsymbol{x} -
-\int r(\boldsymbol{x})p_{syn}(\boldsymbol{x})\text{d}\boldsymbol{x}.
-$$
-Consequently, @kanamori_ulsif_2009 show how the integrals can be approximated with empirical averages, 
-$$
-\hat{\text{SQ}}(\hat{r}) = \frac{1}{2n_{obs}} \sum^{n_{obs}}_{i=1} \hat{r}(\boldsymbol{x}^{obs}_i)^2 - 
-\frac{1}{n_{syn}} \sum^{n_{syn}}_{i'=1} \hat{r}(\boldsymbol{x}^{syn}_i),
-$$
-after which this criterion can be minimized.
+\hat{\boldsymbol{\theta}} = \Big(
+\frac{1}{n_{obs}}\boldsymbol{\varphi}(\boldsymbol{x}_{obs})'
+\boldsymbol{\varphi}(\boldsymbol{x}_{obs})
+\Big)^{-1} 
+\Big(
+\frac{1}{n_{syn}} \boldsymbol{\varphi}(\boldsymbol{x}_{syn})' \boldsymbol{1}_{n_{syn}}
+\Big),
+$$ {#eq-param-est}
+which shows the least-squares nature of the problem. 
+Because one would expect the density ratio to be non-negative, a non-negativity constraint for $\boldsymbol{\theta}$ can be added to the optimization problem, which would yield a convex quadratic optimization problem that can be solved with dedicated software. 
+However, ignoring the non-negativity constraint has the advantage that @eq-objective has an analytical expression, which is numerically stable and computationally very efficient.
+The corresponding downside of having negative estimated density ratio values can be remedied by setting negative values in $\hat{\boldsymbol{\theta}}$ to $0$.
 
-To actually minimize this criterion, we need a density ratio model.
-For least-squares importance fitting, @kanamori_ulsif_2009 define the following model
+
+From here, we are left with two remaining tasks. 
+First, one typically wants to add a regularization parameter $\lambda$ to the objective function to prevent overfitting and ensure positive-definiteness. 
+In the unconstrained realm, a ridge penalty $(\lambda/2) \boldsymbol{\theta}'\boldsymbol{\theta}$ is typically added to the optimization problem in @eq-objective.
+Adding this to the solution in @eq-param-est yields
 $$
-\hat{r}(\boldsymbol{x}) = \sum^{b}_{\ell = 1} \theta_{\ell} \psi_{\ell}(\boldsymbol{x}) = \boldsymbol{\psi}(\boldsymbol{x})'\boldsymbol{\theta},
+\hat{\boldsymbol{\theta}} = \Big(
+\frac{1}{n_{obs}}\boldsymbol{\varphi}(\boldsymbol{x}_{obs})'
+\boldsymbol{\varphi}(\boldsymbol{x}_{obs})
++ \lambda \boldsymbol{I}_b
+\Big)^{-1} 
+\Big(
+\frac{1}{n_{syn}} \boldsymbol{\varphi}(\boldsymbol{x}_{syn})' \boldsymbol{1}_{n_{syn}}
+\Big),
+$$ {#eq-param-est-reg}
+where $\boldsymbol{I}_b$ denotes a $b \times b$ identity matrix.
+The regularization parameter $\lambda$ can be chosen via cross-validation.
+Conveniently, the _leave-one-out cross-validation_ score can also be computed analytically when using unconstrained least-squares importance fitting [see Section 3.4 in @kanamori_ulsif_2009].
+Second, we need to specify the basis functions used in the density ratio model.
+A common choice is to use a Gaussian kernel, which quantifies the similarity between observations as
 $$
-with $\boldsymbol{\psi}(\boldsymbol{x})$ a non-negative basis function vector and $\boldsymbol{\theta}$ the vector with parameter estimates.
-Rewriting the estimated squared error in accordance with this density ratio model yields
+\boldsymbol{\varphi}(\boldsymbol{x}) = 
+\boldsymbol{K}(\boldsymbol{x}, \boldsymbol{c}) = 
+\exp \Bigg(-\frac{\lVert \boldsymbol{x} - \boldsymbol{c}\rVert^2}{2\sigma^2} \Bigg),
+$$ {#eq-gauss-kernel}
+where $\boldsymbol{c}$ denotes the Gaussian centers and $\sigma$ controls the kernel width.
+The bandwidth parameter $\sigma$ can also be selected using cross-validation.
+Typically a subset of the numerator samples are chosen as the Gaussian centers, because the density ratio tends to take large values at locations where the numerator density has more mass than the denominator density. 
+To estimate the density ratio accurately, we may use many kernels where the density ratio is expected to be large, whereas having few kernels might suffice in the locations where the density ratio is small.
+Hence, we place many kernels where the synthetic data density is large, by taking a sample of the synthetic records as Gaussian centers, with the number of samples $n_c$ dependent on the computational resources available (but typically $\min(100, n_{syn}) \leq n_{c} \leq \min(1000, n_{syn})$).
+
+After estimating the density ratio, one can assess whether the numerator and denominator densities differ significantly via a permutation test.
+To this end, @sugiyama_lstst_2011 propose a two-sample test that quantifies the discrepancy between the numerator (synthetic) and denominator (observed) samples through the density ratio, using the Pearson divergence $\mathcal{P}(p_{syn}(\boldsymbol{x}), p_{obs}(\boldsymbol{x}))$ as a test statistic:
 $$
-\hat{\text{SQ}}(\boldsymbol{\theta}) = 
-\frac{1}{2n^{obs}}\boldsymbol{\theta}' \boldsymbol{\psi}(\boldsymbol{x}^{obs})'\boldsymbol{\psi}(\boldsymbol{x}^{obs})\boldsymbol{\theta} - \frac{1}{n^{syn}}\boldsymbol{\psi}(\boldsymbol{x})'\boldsymbol{1}_{n^{syn}} + \lambda \boldsymbol{\theta}'\boldsymbol{\theta},
-$$
-where the last term is added for regularization purposes.
-The solution to this optimization problem can be obtained analytically by solving
-$$
-\hat{\boldsymbol{\theta}} = (\frac{1}{n^{obs}}\boldsymbol{\psi}(\boldsymbol{x})' \boldsymbol{\psi}(\boldsymbol{x}) + \lambda \boldsymbol{I}_b)^{-1} \frac{1}{n^{syn}}\boldsymbol{\psi}(\boldsymbol{x})'\boldsymbol{1}_{n^{syn}}.
-$$
-Note that this procedure is called unconstrained least-squares importance fitting, because the solution is unconstrained, potentially resulting in negative density ratio values. 
-This can be accounted for by either setting negative density ratio values to $0$, or by using a convex quadratic program to solve the optimization problem (using an $\ell_1$ regularizer instead of an $\ell_2$ regularizer).
-The regularization parameter $\lambda$, as well potential parameters of the basis functions, can be optimized using cross-validation, by computing the out-of-sample squared error [see @kanamori_ulsif_2009].
-
-Hier nog iets zeggen over dat een gaussian kernel een goede keus is voor basis function, omdat deze goede properties heeft.
-
-Nog toevoegen dat een statistische test gebaseerd op permutaties gedaan kan worden.
+\hat{\mathcal{P}}(p_{syn}(\boldsymbol{x}), p_{obs}(\boldsymbol{x}))
+= \frac{1}{2n_{syn}} \sum^{n_{syn}}_{i=1} \hat{r}(\boldsymbol{x}_{syn}^{(i)}) -
+\frac{1}{n_{obs}} \sum^{n_{obs}}_{j=1} \hat{r}(\boldsymbol{x}_{obs}^{(j)}) + \frac{1}{2}.
+$$ {#eq-pearson-test}
+Intuitively, this discrepancy captures how different the synthetic data is from the observed data by measuring the distance from the density ratio at the observed data points to the density ratio at the synthetic data points.
+As we show in our empirical examples, this statistic is difficult to interpret in an absolute sense.
+However, we show that it is useful as a relative measure of fit of the different synthetic data sets. 
+Additionally, the value of the test statistic can be used to construct a hypothesis test for the lack of fit of the synthetic data using a permutation test. 
+An empirical $p$-value can then be calculated as the proportion of test statistics under the null model that are greater than the observed test statistic.
+In this way, it can be assessed whether the synthetic data model is misspecified, by comparing the observed value to what can be expected under a correctly specified synthesis model.
 
 
 
 
-# Illustrations of density ratio estimation as a utility measure
 
-Deze tekst moet nog aangepast worden, maar wilde eerst graag weten of de voorbeelden oke zijn. Ik wil ook nog een voorbeeld toevoegen met een lognormale verdelingen die benaderd wordt door een normaalverdeling, maar ik ben nog even bezig met uitzoeken hoe ik dan de variantie en het gemiddelde gelijk krijg (omdat de verwachting van een lognormaalverdeelde variabele een functie is het gemiddelde en de standaarddeviatie op de logschaal). Een alternatief kan ook zijn om iets met een zero-inflated (en dus bimodal) model te doen, omdat dit dan zou voortborduren op de presentatie van Jorg Drechsler bij PSD. 
+# Density ratio estimation as a utility measure: Simulated and empirical examples
 
-Verder wil ik ook nog graag een multivariaat voorbeeld toevoegen, maar ik twijfel nog een beetje over de context (misschien iets met aflopende correlaties, zoals Snoke et al. in hun pmse paper doen), maar het kan ook iets met subspaces of dimension reduction zijn (maar vraag me af of het dan niet teveel wordt).
+In this section, we illustrate density ratio estimation using unconstrained least-squares importance fitting.
+In a small simulation, we show that the method gives reasonable results when the goal is to estimate a density ratio in several parametric examples.
+Subsequently, we use these examples to show how the results of density ratio estimation can be used as a measure of utility, and we describe how a lack of fit of the synthesis model can be inferred from the density ratio.
+Starting with univariate examples, we compare the density ratio two-sample test with existing goodness-of-fit measures (the Kolmogorov-Smirnov test and the $pMSE$).
+As a final illustration, we build upon the work by @drechsler_utility_2022, and showcase how density ratio estimation improves upon utility assessment through the $pMSE$ in a multivariate example.
+All analyses were conducted in `R` [Version 4.3.0\; @R], and the code is available on [GitHub](https://github.com/thomvolker/unece-density-ratio).
+The software used to perform density ratio estimation is implemented in an `R`-package called `densityratio` [@densityratio]. 
 
-En ik wil graag aan de voorbeelden zoals ze nu zijn nog graag een permutatie-test statistiek toevoegen, zodat we een beetje kunnen classificeren hoe goed de methode het doet. Als dat erbij zit, zitten we denk ik wel aan tien pagina's [VRAAG AAN PP: IS DEZE LIMIET INCLUSIEF OF EXCLUSIEF VOORBLAD EN REFERENTIES?].
-Ook over specific-utility moeten we het dan misschien nog eventjes hebben, want het lijkt me wat veel om dat hier ook nog als voorbeeld in te gooien, dus misschien alleen in de discussie kort bespreken.
-Laten we het hier maandag over hebben!
+## Density ratio estimation in simulated univariate examples
 
-In the upcoming section, we display how density ratio performs in some typical examples. 
-In the synthetic data field, is easily happens that some complicated data distribution is approximated by a simpler one. 
-For example, when the real data distribution follows a Laplace distribution, it is quite plausible that this data is approximated by some normal distribution. 
-Similarly, it can very well be that data that is distributed according to a $t$-distribution with, say, three degrees of freedom (and thus with relatively fat tails), is approximated by a normal distribution.
+To provide an intuition about the performance of unconstrained least-squares importance fitting, we apply it to a simplified example of a typical situation in the synthetic data field.
+When creating synthetic data, we often have a complex, usually unknown, data distribution that we want to approximate with a model. 
+We generally lack information to correctly model real-world phenomena, and even if we would have sufficient information, some important factors might be missing from the data, or the model might be so complex that it is unfeasible to actually simulate data from it.
+For the sake of illustrational clarity, we generate univariate data according to four true data-generating mechanisms:
 
-```{r, message = FALSE, warning = FALSE, cache = TRUE}
+1. $\text{Laplace}(\mu = 1, b = 1)$ 
+2. $\text{Log-normal}(\mu_{\log} = \log{\{\mu^2/\sqrt{\mu^2 + \sigma^2_x}\}}, \sigma^2_{\log} = \log{\{1 + \sigma^2_x/\mu^2\}})$, with $\mu = 1$ and $\sigma^2_x = 2$
+3. Location-scale $t$-distribution $lst(\mu = 1, \tau^2 = 1, \nu = 4)$
+4. $\text{Normal}(\mu = 1, \sigma^2_x = 2)$
+
+Note that these four distributions all have the same population mean $\mu = 1$ and the same population variance $\sigma^2_x = 2$.
+From each distribution, we generate $200$ data sets of size $n_{obs} = 250$. 
+For all scenarios, we approximate the true data-generating mechanism by drawing $200$ data sets of size $n_{syn} = 250$ from a normal distribution ($\text{Normal}(\mu = 1, \sigma^2_x = 2)$), such that we accurately model the mean and variance of each true data-generating distribution (see also @fig-densities for a graphical depiction of the true and synthetic data densities).
+Note that in the fourth scenario, we thus model the true data-generating distribution correctly, which is included to get some intuition on how density ratio estimation performs when we specify the synthesis model correctly.
+All density ratios were estimated with the exact same model specifications: we used $100$ observations from the synthetic data as Gaussian centers and performed cross-validation over $10$ values of the Gaussian kernel width $\sigma$ and $10$ values of the regularization parameter $\lambda$. 
+
+
+```{r}
+#| label: fig-densities
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-dpi: 500
+#| fig-cap: "True and synthetic data densities for the examples considered (Laplace, Log-normal, $t$ and Normal), all distributions have mean $\\mu = 1$ and variance $\\sigma^2_x = 2$. Note that the true and synthetic data density in the bottom right plot are completely overlapping."
+#| out-width: 100%
+#| fig-height: 3.3
+#| fig-pos: t
+#| dev: cairo_pdf
+
 library(purrr)
+library(furrr)
 library(densityratio)
-library(ggplot2)
+library(dplyr)
+library(synthpop)
+
+plan(multisession, workers = future::availableCores() - 1)
 
 set.seed(123)
-
-nsim <- 50
-n <- 500
-mu <- 1
-sd <- sqrt(2)
-
-x_eval <- seq(-5, 7, length.out = 10000) |> matrix()
 
 
 dlaplace <- function(x, mu = 0, sd = 1) exp(-abs(x-mu)/(sd / sqrt(2))) / (2*(sd / sqrt(2))) 
@@ -218,83 +326,766 @@ rlaplace <- function(n, mu = 0, sd = 1) {
   b <- sd / sqrt(2)
   mu - b * sign(p - 0.5) * log(1 - 2*abs(p - 0.5))
 }
-dratio <- function(x, mu_norm = 0, mu_laplace = 0, sd_norm = 1, sd_laplace = 1) {
-  dnorm(x, mu_norm, sd_norm) / dlaplace(x, mu_norm, sd_norm)
+dratio_lap_norm <- function(x, mu = 0, sd = 1) {
+  dnorm(x, mu, sd) / dlaplace(x, mu, sd)
 }
 
-lap_norm <- map(1:nsim, function(x) {
-  normal <- rnorm(n, mu, sd)
-  laplace <- rlaplace(n, mu, sd)
-  ratio <- ulsif(normal, laplace, ncenters = 100, nsigma = 10, nlambda = 10, progressbar = FALSE)
-  predict(ratio, newdata = x_eval)
-})
-
-ggplot() +
-  geom_line(mapping = aes(x = rep(x_eval, nsim), 
-                          y = unlist(lap_norm), 
-                          group = rep(1:nrow(x_eval), each = nsim) |> factor()),
-            alpha = 0.2, col = "darkgreen") +  
-  stat_function(fun = dratio,
-                args = list(mu_norm = mu, mu_laplace = mu, sd_norm = sd, sd_laplace = sd)) +
-    theme_minimal()
-
-mean_rlnorm <- log(log(exp(1) / sqrt(1 + 2 / exp(2 * 1))))
-sd_rlnorm <- sqrt(log(1 + 2 / exp(2 * 1)))
-
-dratio_norm_t <- function(x, mu = 0, df = 4) {
-  dnorm(x - mu, 0, sqrt(df / (df-2))) / dt(x - mu, df)
+dratio_lnorm_norm <- function(x, mu = 0, sd = 1) {
+  mean_rlnorm <- log(mu^2 / sqrt(mu^2 + sd^2))
+  sd_rlnorm <- sqrt(log(1 + sd^2 / mu^2))
+  dnorm(x, mu, sd) / dlnorm(x, mean_rlnorm, sd_rlnorm)
 }
 
-t_norm <- map(1:nsim, function(x) {
-  normal <- rnorm(n, 1, sqrt(2))
-  t <- rt(n, 4) + 1
-  ratio <- ulsif(normal, t, ncenters = 100, nsigma = 10, nlambda = 10, progressbar = FALSE)
-  predict(ratio, newdata = x_eval)
-})
+dratio_t_norm <- function(x, mu = 0, sd = 1) {
+  df <- 2 / (1 - 1/sd^2)
+  dnorm(x - mu, 0, sd) / dt(x - mu, df)
+}
+
+dratio_norm_norm <- function(x, mu = 0, sd = 1) {
+  dnorm(x, mu, sd) / dnorm(x, mu, sd)
+}
+
+mu <- 1
+sd <- sqrt(2)
+
 
 ggplot() +
-  geom_line(mapping = aes(x = rep(x_eval, nsim), 
-                          y = unlist(t_norm), 
-                          group = rep(1:nrow(x_eval), each = nsim) |> factor()),
-            alpha = 0.2, col = "darkgreen") +  
-  stat_function(fun = dratio_norm_t,
-                args = list(mu = 1, df = 4)) +
-    theme_minimal()
+  geom_function(aes(col = "A"), 
+                fun = dlaplace, args = list(mu = mu, sd = sd),
+                size = 0.5) +
+  geom_function(aes(col = "B"), 
+                fun = dnorm, args = list(mean = mu, sd = sd),
+                size = 0.5) +
+  xlim(-3, 5) +
+  ylim(0, 1.2) +
+  scale_color_brewer(labels = c("A" = "Laplace", "B" = "Normal"),
+                     palette = "Set2",
+                     name = "") +
+  ylab("Density") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10"),
+        legend.background = element_blank()) +
+  ggplot() +
+  geom_function(aes(col = "A"), 
+                fun = dlnorm, args = list(meanlog = log(mu^2 / sqrt(mu^2 + sd^2)), 
+                                          sdlog = sqrt(log(1 + sd^2/mu^2))),
+                size = 0.5) +
+  geom_function(aes(col = "B"), 
+                fun = dnorm, args = list(mean = mu, sd = sd),
+                size = 0.5) +
+  xlim(-3, 5) +
+  ylim(0, 1.2) +
+  scale_color_brewer(labels = c("A" = "Log-normal", "B" = "Normal"),
+                     palette = "Set2",
+                     name = "") +
+  ylab("Density") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10"),
+        legend.background = element_blank()) +
+  ggplot() +
+  geom_function(aes(col = "A"), 
+                fun = ~dt(.x - mu, df = 2 * sd^2 / (sd^2 - 1)),
+                size = 0.5) +
+  geom_function(aes(col = "B"), 
+                fun = dnorm, args = list(mean = mu, sd = sd),
+                size = 0.5) +
+  xlim(-3, 5) +
+  ylim(0, 1.2) +
+  scale_color_brewer(labels = c("A" = expression(italic(lst)), "B" = "Normal"),
+                     palette = "Set2",
+                     name = "") +
+  ylab("Density") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10"),
+        legend.background = element_blank()) +
+  ggplot() +
+  geom_function(aes(col = "A"), 
+                fun = dnorm, args = list(mean = mu, sd = sd),
+                size = 0.5) +
+  geom_function(aes(col = "B"), 
+                fun = dnorm, args = list(mean = mu, sd = sd),
+                size = 0.5) +
+  xlim(-3, 5) +
+  ylim(0, 1.2) +
+  scale_color_brewer(labels = c("A" = "Normal", "B" = "Normal"),
+                     palette = "Set2",
+                     name = "") +
+  ylab("Density") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.background = element_blank(),
+        text = element_text(family = "LM Roman 10"))
+  
+```
 
-norm_norm <- map(1:nsim, function(x) {
-  normal1 <- rnorm(n, 1, sqrt(2))
-  normal2 <- rnorm(n, 1, sqrt(2))
-  ratio <- ulsif(normal1, normal2, ncenters = 100, nsigma = 10, nlambda = 10, progressbar = FALSE)
-  predict(ratio, newdata = x_eval)
+<!-- Deze tekst moet nog aangepast worden, maar wilde eerst graag weten of de voorbeelden oke zijn. Ik wil ook nog een voorbeeld toevoegen met een lognormale verdelingen die benaderd wordt door een normaalverdeling, maar ik ben nog even bezig met uitzoeken hoe ik dan de variantie en het gemiddelde gelijk krijg (omdat de verwachting van een lognormaalverdeelde variabele een functie is het gemiddelde en de standaarddeviatie op de logschaal). Een alternatief kan ook zijn om iets met een zero-inflated (en dus bimodal) model te doen, omdat dit dan zou voortborduren op de presentatie van Jorg Drechsler bij PSD.  -->
+
+<!-- Verder wil ik ook nog graag een multivariaat voorbeeld toevoegen, maar ik twijfel nog een beetje over de context (misschien iets met aflopende correlaties, zoals Snoke et al. in hun pmse paper doen), maar het kan ook iets met subspaces of dimension reduction zijn (maar vraag me af of het dan niet teveel wordt). -->
+
+<!-- En ik wil graag aan de voorbeelden zoals ze nu zijn nog graag een permutatie-test statistiek toevoegen, zodat we een beetje kunnen classificeren hoe goed de methode het doet. Als dat erbij zit, zitten we denk ik wel aan tien pagina's [VRAAG AAN PP: IS DEZE LIMIET INCLUSIEF OF EXCLUSIEF VOORBLAD EN REFERENTIES?]. -->
+<!-- Ook over specific-utility moeten we het dan misschien nog eventjes hebben, want het lijkt me wat veel om dat hier ook nog als voorbeeld in te gooien, dus misschien alleen in de discussie kort bespreken. -->
+<!-- Laten we het hier maandag over hebben! -->
+
+<!-- In the upcoming section, we display how density ratio performs in some typical examples.  -->
+<!-- In the synthetic data field, is easily happens that some complicated data distribution is approximated by a simpler one.  -->
+<!-- For example, when the real data distribution follows a Laplace distribution, it is quite plausible that this data is approximated by some normal distribution.  -->
+<!-- Similarly, it can very well be that data that is distributed according to a $t$-distribution with, say, three degrees of freedom (and thus with relatively fat tails), is approximated by a normal distribution. -->
+
+
+
+```{r}
+#| label: fig-sim-dr
+#| warning: false
+#| message: false
+#| cache: true
+#| fig-cap: "Estimated density ratios by unconstrained least-squares importance fitting in four univariate examples: A Laplace distribution, a log-normal distribution, a $t$-distribution and a normal distribution, all approximated by a normal distribution with the same mean and variance as the original distributions."
+#| fig-height: 3.3
+#| out-width: 100%
+#| fig-pos: t
+#| dev: CairoPNG
+#| fig-dpi: 2000
+#| echo: false
+nsim <- 200
+n <- 250
+mu <- 1
+sd <- sqrt(2)
+
+x_eval <- seq(-3, 5, length.out = 10000) |> matrix()
+
+plot_dr <- function(x_eval, predict_list, dr_fun, dr_fun_args) {
+  nsim <- length(predict_list)
+  ggplot() +
+    geom_line(mapping = aes(x = rep(x_eval, nsim),
+                            y = unlist(predict_list),
+                            group = rep(1:nrow(x_eval), each = nsim)),
+              alpha = 0.1, col = "#014c61") +
+    stat_function(fun = dr_fun, args = dr_fun_args) +
+    theme_minimal() +
+    ylab(expression(hat(italic(r)))) +
+    xlab(NULL)
+}
+
+dat_lap_norm <- purrr::map(1:nsim, ~list(laplace = rlaplace(n, mu, sd),
+                                         norm = rnorm(n, mu, sd)))
+
+dat_lnorm_norm <- purrr::map(1:nsim, ~list(lnorm = rlnorm(n,
+                                                          log(mu^2 / sqrt(mu^2 + sd^2)), 
+                                                          sqrt(log(1 + sd^2/mu^2))),
+                                           norm = rnorm(n, mu, sd)))
+
+dat_t_norm <- purrr::map(1:nsim, ~list(t = rt(n, 2/(1 - 1/sd^2)) + mu,
+                                       norm = rnorm(n, mu, sd)))
+
+dat_norm_norm <- purrr::map(1:nsim, ~list(norm1 = rnorm(n, mu, sd),
+                                          norm2 = rnorm(n, mu, sd)))
+
+lap_norm_dr <- future_map(dat_lap_norm, ~ulsif(.x$norm, 
+                                               .x$laplace, 
+                                               ncenters = 100, 
+                                               nsigma = 10,
+                                               nlambda = 10,
+                                               progressbar = FALSE),
+                          .options = furrr_options(seed = TRUE))
+
+lnorm_norm_dr <- future_map(dat_lnorm_norm, ~ulsif(.x$norm,
+                                                   .x$lnorm, 
+                                                   ncenters = 100, 
+                                                   nsigma = 10,
+                                                   nlambda = 10,
+                                                   progressbar = FALSE),
+                            .options = furrr_options(seed = TRUE))
+
+t_norm_dr <- future_map(dat_t_norm, ~ulsif(.x$norm,
+                                           .x$t, 
+                                           ncenters = 100, 
+                                           nsigma = 10,
+                                           nlambda = 10,
+                                           progressbar = FALSE),
+                        .options = furrr_options(seed = TRUE))
+
+norm_norm_dr <- future_map(dat_norm_norm, ~ulsif(.x$norm1,
+                                                 .x$norm2, 
+                                                 ncenters = 100, 
+                                                 nsigma = 10,
+                                                 nlambda = 10,
+                                                 progressbar = FALSE),
+                           .options = furrr_options(seed = TRUE))
+
+lap_norm_predict   <- map(lap_norm_dr, ~predict(.x, newdata = x_eval))
+lnorm_norm_predict <- map(lnorm_norm_dr, ~ predict(.x, newdata = x_eval))
+t_norm_predict     <- map(t_norm_dr, ~predict(.x, newdata = x_eval))
+norm_norm_predict  <- map(norm_norm_dr, ~ predict(.x, newdata = x_eval))
+
+list(
+  plot_dr(x_eval, lap_norm_predict, dratio_lap_norm, list(mu = mu, sd = sd)) +
+    ggtitle(expression(italic(P[Normal])/italic(P[Laplace]))) +
+    ylim(-1, 4) +
+    theme(text = element_text(family = "LM Roman 10", size = 9)),
+  plot_dr(x_eval, lnorm_norm_predict, dratio_lnorm_norm, list(mu = mu, sd = sd)) +
+    ggtitle(expression(italic(P[Normal])/italic(P[`Log-normal`]))) +
+    ylim(-1, 10) +
+    theme(text = element_text(family = "LM Roman 10", size = 9)),
+  plot_dr(x_eval, t_norm_predict, dratio_t_norm, list(mu = mu, sd = sd)) +
+    ggtitle(expression(italic(P[Normal])/italic(P[lst]))) +
+    ylim(-1, 4) +
+    theme(text = element_text(family = "LM Roman 10", size = 9)),
+  plot_dr(x_eval, norm_norm_predict, dratio_norm_norm, list(mu = mu, sd = sd)) +
+    ggtitle(expression(italic(P[Normal])/italic(P[Normal]))) +
+    ylim(-1, 4) +
+    theme(text = element_text(family = "LM Roman 10", size = 9))
+) |>
+  patchwork::wrap_plots(ncol = 2, byrow = TRUE)
+```
+
+@fig-sim-dr shows how the estimated density ratios for the $200$ simulated datasets in each scenario (the blue lines in each subfigure) compared to the true density ratios (the black lines).
+In each of the four figures, the estimated density ratios follow the general trend of the true density ratios. 
+In the top-left plot, showing the ratio of the normal distribution over the Laplace distribution, the density ratio decreases at the sides, then increases when moving towards the center, but decreases again close to the center. 
+The same can be observed in the bottom-left plot, which shows the normal distribution over the $lst$-distribution. 
+In the top right panel, the estimated density ratios are typically large for negative values, very close to zero (or even negative) around the peak of the log-normal distribution, and subsequently increasing and later on decreasing again. 
+In the bottom right panel, where both distributions are identical, the majority of the estimated density ratios are very flat, tending towards zero to some extent at the edges of the figure where only few data points are located.
+Moreover, all figures show some highly variable estimated density ratios due to modest overfitting regardless of the cross-validation scheme, whereas the normal versus log-normal figure shows many highly variable estimates outside of the center of the figure, due to the fact that either the synthetic or the observed data has only few cases in these regions.
+Normally, the stability of the estimates increases with the sample size.
+@fig-sim-dr also shows one of the main advantages of density ratio estimation as a utility measure, in the sense that it provides a quantification of the fit for every data point. 
+At those locations where the estimated density ratio takes large values, there are too many synthetic observations compared to what should be expected based on the observed data, whereas at the points where the density ratio is close to zero, there are too few synthetic observations relative to the observed data.
+Likewise, a high density ratio value for a synthetic record indicates that this point deviates from what would be typical under the observed data-generating mechanism.
+
+As it is hard to infer from visualizations whether the misfit could arise from chance alone, or whether the synthetic data model is misspecified, we formally evaluate the fit of the synthetic data by performing statistical inference using the Pearson divergence as a measure of discrepancy (see @eq-pearson-test).
+To explore the properties of the corresponding permutation test, we compare it in terms of power and Type I error rate with the Kolmogorov-Smirnov test and with a $pMSE$-based test, obtained by performing a permutation test and assessing the proportion of times the permuted $pMSE$s are larger than the observed $pMSE$ [@snoke_utility_2018]. 
+The $pMSE$s are calculated by using the `utility.tab()` function with default settings from the `R`-package `synthpop` [@nowok2016].
+@tbl-test-pvals shows that in terms of evaluating the misfit of the synthetic data, the density ratio-based test has statistical power similar to the $pMSE$-based test. 
+That is, when the synthetic data model differs from the observed data-generating mechanism, the density ratio-based test and the $pMSE$-based test indicate significant misfit in approximately $60\%$ of the simulations for the Laplace data, $100\%$ for the log-normal data and $50\%$ for the location-scale $t$-distributed data.
+Both methods achieve considerably higher power than the Kolmogorov-Smirnov test.
+When the synthesis model is correctly specified, all three methods achieve a nominal Type I error rate close to $0.05$. 
+
+
+
+```{r}
+#| label: dr-pvals
+#| echo: false
+#| cache: true
+#| warning: false
+#| message: false
+
+summaries <- list(Laplace = lap_norm_dr,
+     Log = lnorm_norm_dr,
+     t = t_norm_dr,
+     Normal = norm_norm_dr) |>
+  map(function(x) {
+    p <- future_map(x, ~summary(.x, n.perm = 100), .options = furrr_options(seed = TRUE))
+    p
+  })
+
+dr_p <- map_dbl(summaries, function(x) {
+  mean(map_dbl(x, ~.x$p_value) < 0.05)
 })
-
-ggplot() +
-  geom_line(mapping = aes(x = rep(x_eval, nsim), 
-                          y = unlist(norm_norm), 
-                          group = rep(1:nrow(x_eval), each = nsim) |> factor()),
-            alpha = 0.2, col = "darkgreen") +  
-  geom_abline(intercept = 1, slope = 0) +
-  theme_minimal()
 ```
 
 ```{r}
-# multivariate normal versus multivariate normal
-# 
-# multivariate normal versus something else
+#| label: ks-pvals
+#| echo: false
+#| cache: true
+#| warning: false
+#| message: false
+ks_p <- c(
+  mean(map_dbl(dat_lap_norm, ~ks.test(.x$norm, .x$laplace)$p.value) < .05),
+  mean(map_dbl(dat_lnorm_norm, ~ks.test(.x$norm, .x$lnorm)$p.value) < .05),
+  mean(map_dbl(dat_t_norm, ~ks.test(.x$norm, .x$t)$p.value) < 0.05),
+  mean(map_dbl(dat_norm_norm, ~ks.test(.x$norm1, .x$norm2)$p.value) < 0.05)
+)
 ```
+
+```{r}
+#| label: pmse-pvals
+#| echo: false
+#| cache: true
+#| warning: false
+#| message: false
+
+permute_pmse <- function(n, x) {
+  ind <- sample(rep(c(TRUE, FALSE), c(n, n)), n)
+  synthpop::utility.tab(
+    data.frame(x = x[ind]),
+    data.frame(x = x[!ind]),
+    vars = "x")$pMSE
+}
+
+refdist_pmse <- function(n, x, n.perm) {
+  replicate(n.perm, permute_pmse(n, x))
+}
+
+pmsetest_lap_norm <- map_dbl(dat_lap_norm, function(dat) {
+  pMSE <- synthpop::utility.tab(
+    data.frame(x = dat$norm),
+    data.frame(x = dat$laplace),
+    vars = "x",
+  )$pMSE
+  ref_dist <- refdist_pmse(n, c(dat$norm, dat$laplace), 100)
+  mean(ref_dist > pMSE)
+})
+
+pmsetest_lnorm_norm <- map_dbl(dat_lnorm_norm, function(dat) {
+  pMSE <- synthpop::utility.tab(
+    data.frame(x = dat$norm),
+    data.frame(x = dat$lnorm),
+    vars = "x"
+  )$pMSE
+  ref_dist <- refdist_pmse(n, c(dat$norm, dat$lnorm), 100)
+  mean(ref_dist > pMSE)
+})
+
+pmsetest_t_norm <- map_dbl(dat_t_norm, function(dat) {
+  pMSE <- synthpop::utility.tab(
+    data.frame(x = dat$norm),
+    data.frame(x = dat$t),
+    vars = "x"
+  )$pMSE
+  ref_dist <- refdist_pmse(n, c(dat$norm, dat$t), 100)
+  mean(ref_dist > pMSE)
+})
+
+pmsetest_norm_norm <- map_dbl(dat_norm_norm, function(dat) {
+  pMSE <- synthpop::utility.tab(
+    data.frame(x = dat$norm1),
+    data.frame(x = dat$norm2),
+    vars = "x"
+  )$pMSE
+  ref_dist <- refdist_pmse(n, c(dat$norm1, dat$norm2), 100)
+  mean(ref_dist > pMSE)
+})
+
+pmse_p <- c(
+  mean(pmsetest_lap_norm < .05),
+  mean(pmsetest_lnorm_norm < 0.05),
+  mean(pmsetest_t_norm < 0.05),
+  mean(pmsetest_norm_norm < 0.05)
+)
+```
+
+```{r}
+#| label: tbl-test-pvals
+#| echo: false
+#| cache: true
+#| warning: false
+#| message: false
+#| tbl-cap: Proportion of significant tests for the fit of the synthetic data.
+#| tbl-cap-location: top
+tibble(Data = c("Laplace", "Log-normal", "$lst$", "Normal"),
+           `Density ratio` = dr_p,
+           `Kolmogorov-Smirnov` = ks_p, 
+           `$pMSE$` = pmse_p) |>
+  kableExtra::kbl(format = "latex", booktabs = TRUE, escape = FALSE)
+```
+
+## Density ratio estimation for synthetic Current Population Survey data
+
+To evaluate the properties of density ratio estimation in a real-life example, we repeat Drechsler's [-@drechsler_utility_2022] illustration of the $pMSE$ as a fit-for-purpose and global utility measure with a subset of the March 2000 U.S. Current Population Survey, but now using density ratio estimation.
+Notably, we use the exact same (default) density ratio model specifications as in the previous simulations, both for evaluating the utility of the variables separately and over the synthetic data sets as a whole.
+We use exactly the same data as @drechsler_utility_2022, that is, the variables _Sex_, _Race_, _Marital Status_, _Highest attained education level_, _Age_, _Social security payments_, _Household property taxes_ and _Household income_, measured on $n = 5000$ individuals (descriptive statistics are provided in @tbl-desc and a graphical depiction of the numeric variables is shown in @fig-vars-orig, both in Appendix A).
+Note that the continuous variables are typically non-normal, while the variables _Household property taxes_ and _Social security payments_ in addition have a point-mass at zero.
+Data synthesis is done using the `R`-package `synthpop` [@nowok2016], using the same synthesis strategies as used in @drechsler_utility_2022. 
+We thus refer to this paper for details about the synthesis strategies, and only briefly describe the synthesis models here.
+Three of the synthetic data sets are created using parametric models: _Sex_ and _Race_ are synthesized with logistic regression models, _Marital status_ and _Highest attained education_ are synthesized using multinomial regression, and all continuous variables are synthesized using a linear model.
+The parametric synthesis models build up in complexity in how they model the continuous variables in the following way: the first model (labelled _naive_) does not take the distributions of the variables into account, and models the variables on the original scale; the second model (called _transformed_) transforms the variables by taking their cubic root and subsequently applies a linear model to the transformed variables; the third model (labelled _semi-continuous_) also transforms all variables to the cubic root scale, but in addition separately models the point mass at zero for the variables _Household property taxes_ and _Social security payments_ separately, after which a linear model is used for the non-zero values.
+The non-parametric synthesis model applies classification and regression trees (CART) to all variables, augmented by smoothing through kernel density estimation in the terminal nodes.
+For all strategies, $m = 5$ synthetic data sets are generated, and the utility is assessed by averaging the Pearson divergence over those sets.
+As noted by @drechsler_utility_2022, based on the sequential refinements of the parametric synthesis models, one would expect the utility to improve with every parametric model, leaving open how the CART models compare to the parametric models.
+
+```{r}
+#| label: real-data-synthesis
+#| warning: false
+#| message: false
+#| cache: true
+#| echo: false
+load("cps5000.RData")
+
+df <- cps |>
+  select(-csp) |>
+  mutate(educ = as.numeric(as.character(educ)), 
+         educ = case_when(educ < 39 ~ 1,
+                          educ < 40 ~ 2,
+                          educ < 44 ~ 3,
+                          educ < 47 ~ 4) |>
+                factor(labels = c("NoHS", "HS", "AoBD", "MoH")),
+         race = factor(race, labels = c("White", "Non-white", "Non-white", "Non-white")),
+         marital = factor(marital, labels = c("Married", "Married", "Separated", 
+                                              "Separated", "Widowed", "Single", 
+                                              "WidowedORDivorced")),
+         sex = factor(sex, labels = c("Male", "Female")))
+
+method.ini <- c("norm", "norm", "norm", "polyreg", "polyreg", "logreg", "logreg", "norm")
+visit <- c(7, 1, 2, 3, 4, 5, 6, 8)
+m <- 5
+synlist <- list(
+  unadj = syn(
+    df, 
+    m = m, 
+    method = method.ini, 
+    visit.sequence = visit, 
+    seed = 1234, 
+    print.flag = FALSE
+  ), 
+  trans = syn(
+    df |> mutate(across(c(income, tax, age, ss), ~ .x^{1/3})),
+    m = m, 
+    method = method.ini,
+    visit.sequence = visit, 
+    seed = 1234,
+    print.flag = FALSE
+  ),
+  semi = syn(
+    df |> mutate(across(c(income, tax, age, ss), ~ .x^{1/3})),
+    m = m,
+    method = method.ini,
+    visit.sequence = visit,
+    semicont = list(tax = "0", ss = "0"),
+    seed = 1234,
+    print.flag = FALSE
+  ),
+  cart = syn(
+    df,
+    m = m, 
+    visit.sequence = visit,
+    seed = 1234,
+    print.flag = FALSE
+  ),
+  smoothed = syn(
+    df,
+    m = m,
+    visit.sequence = visit,
+    smoothing = list(tax = "density", income = "density", ss = "density"),
+    seed = 1234,
+    print.flag = FALSE
+  ),
+  smoothed_semi = syn(
+    df,
+    m = m,
+    visit.sequence = visit,
+    smoothing = list(tax = "density", income = "density", ss = "density"),
+    semicont = list(tax = "0", ss = "0"),
+    seed = 1234,
+    print.flag = FALSE
+  )
+)
+
+synlist$trans$syn <- synlist$trans$syn |>
+  map(~ .x |> mutate(across(c(income, tax, age, ss), ~.x^3)))
+synlist$semi$syn <- synlist$semi$syn |>
+  map(~ .x |> mutate(across(c(income, tax, age, ss), ~.x^3)))
+```
+
+```{r}
+#| label: fig-syn-dist
+#| fig-cap: "Real and synthetic data distributions for the variables age, household income (income), household property taxes (tax) and social security payments (social security) on a cubic root scale (using $f(x) = \\text{sign}(x)|x|^{1/3}$)."
+#| message: false
+#| warning: false
+#| echo: false
+#| fig-dpi: 500
+#| out-width: 100%
+#| fig-height: 4.2
+#| fig-pos: t
+#| dev: cairo_pdf
+
+comb_df <- bind_rows(
+  Real = df,
+  Naive = bind_rows(synlist$unadj$syn), 
+  Transformed = bind_rows(synlist$trans$syn),
+  `Semi-continuous` = bind_rows(synlist$semi$syn),
+  `Smoothed CART` = bind_rows(synlist$smoothed$syn),
+  .id = "Data"
+) |>
+  select(Data,
+         Age = age, 
+         Income = income, 
+         Tax = tax, 
+         `Social security` = ss) |>
+  mutate(Data = factor(Data, levels = c("Real", "Naive", "Transformed", "Semi-continuous", "Smoothed CART")),
+         RealSyn = ifelse(Data == "Real", 1, 2) |> factor(labels = c("Real", "Synthetic")),
+         across(c(Age, Income, Tax, `Social security`), ~abs(.x)^{1/3} * sign(.x))) |>
+  tidyr::pivot_longer(cols = c(Age, Income, Tax, `Social security`), names_to = "Variable")
+
+purrr::map(c("Age", "Income", "Social security", "Tax"), ~
+      ggplot(comb_df |> filter(Variable == .x), aes(x = value, fill = RealSyn, after_stat(density))) +
+      geom_histogram(col = "black", bins = 20) +
+      scale_fill_brewer(palette = "Set2") + 
+      facet_wrap(~Data, ncol = 5) + 
+      theme_minimal() +
+      ylab(.x) +
+      theme(legend.position = "none", 
+            axis.title.x = element_blank(), 
+            strip.text.x = element_text(size = 8),
+            text = element_text(family = "LM Roman 10"))) |>
+  patchwork::wrap_plots(nrow = 4)
+```
+
+@fig-syn-dist shows how the increasing complexity of the synthesis models leads to increasingly realistic synthetic data distributions (all variables are plotted on a cubic root scale using $f(x) = \text{sign}(x)|x|^{1/3}$ to also allow for negative values). 
+It is evident that the _naive_ synthesis strategy does a poor job for all variables except _Age_, whereas the _transformed_ strategy does a poor job for _Tax_ and _Social security_. 
+The _semi-continuous_ strategy seems to fit well for all variables, similarly to the data created with CART, although the latter method preserves the non-normality of the non-zero values in _Social security_ slightly better. 
+The insights from visual inspection are entirely corroborated by the relative Pearson divergences as given by density ratio estimation (see @fig-PE-div).
+For all variables, the _naive_ synthesis method performs worst. 
+Typically, the _transformed_ synthesis improves the synthetic data to some extent, although the difference is relatively small for _Age_, because here the _naive_ synthesis strategy already performed reasonable. 
+For both _Age_ and _Income_, the _transformed_ strategy performs similarly to both the _semi-continuous_ and the CART strategies, because for these variables there is no point-mass to model separately.
+For the variables where a point-mass is modeled separately (e.g., _Social security_ and _Tax_), the _semi-continuous_ approach clearly outperforms the _transformed_ strategy.
+Lastly, CART outperforms the _naive_ and _transformed_ strategies, and performs highly similar to the _semi-continuous_ approach.
+
+When modelling the density ratio over all variables in the data simultaneously (including the categorical variables, for simplicity recoded as numeric variables to be included in density ratio estimation), we see the same picture emerging. 
+@fig-PE-div shows the stepwise improvements in utility when refining the synthesis models. 
+_Naive_ synthesis clearly performs worst, followed by the _transformed_ strategy.
+Both strategies are outperformed by the _semi-continuous_ approach, which performs more or less on par with CART. 
+These results compare favorably with utility assessment through the $pMSE$ as reported in @drechsler_utility_2022.
+The evaluation of utility through the $pMSE$ shows no improvement when going from _naive_ to _transformed_ synthesis, whereas some $pMSE$ models qualified the _naive_ approach as better than the _transformed_ approach.
+The improvement from the first two strategies to _semi-continuous_ and CART was picked up by most $pMSE$ models. 
+Hence, the utility assigned by density ratio estimation was more in line with the refinements to the synthesis models than the utility scores that were obtained with the $pMSE$.
+
+
+
+```{r}
+#| label: fig-PE-div
+#| fig-cap: "Pearson divergence estimates after different synthesis strategies for the separate variables and the synthetic data sets as a whole."
+#| message: false
+#| warning: false
+#| results: false
+#| echo: false
+#| fig-dpi: 500
+#| out-width: 100%
+#| fig-height: 2.8
+#| fig-pos: t
+#| dev: cairo_pdf
+#| cache: true
+logit0_spmse <- future_map(synlist, ~ utility.gen(
+  .x, 
+  data = df, 
+  method = "logit", 
+  print.stats = "all", 
+  maxorder = 0, 
+  print.zscores = FALSE,
+  print.flag = FALSE
+)$S_pMSE, .options = furrr_options(seed = TRUE)) |>
+  map_dbl(mean)
+
+logit1_spmse <- future_map(synlist, ~ utility.gen(
+  .x, 
+  data = df, 
+  method = "logit", 
+  print.stats = "all", 
+  maxorder = 1, 
+  print.zscores = FALSE,
+  print.flag = FALSE
+)$S_pMSE, .options = furrr_options(seed = TRUE)) |>
+  map_dbl(mean)
+
+logit2_spmse <- future_map(synlist, ~ utility.gen(
+  .x, 
+  data = df, 
+  method = "logit", 
+  print.stats = "all", 
+  maxorder = 2, 
+  print.zscores = FALSE,
+  print.flag = FALSE
+)$S_pMSE, .options = furrr_options(seed = TRUE)) |>
+  map_dbl(mean)
+
+cart_def_spmse <- future_map(synlist, ~ utility.gen(
+  .x, 
+  data = df, 
+  method = "cart", 
+  print.stats = "all", 
+  print.zscores = FALSE,
+  print.flag = FALSE
+)$S_pMSE, .options = furrr_options(seed = TRUE)) |>
+  map_dbl(mean)
+
+cart_cp_spmse <- future_map(synlist, ~ utility.gen(
+  .x, 
+  data = df, 
+  method = "cart",
+  cp = 1e-7,
+  print.stats = "all", 
+  print.zscores = FALSE,
+  print.flag = FALSE
+)$S_pMSE, .options = furrr_options(seed = TRUE)) |>
+  map_dbl(mean)
+
+vars <- c("age", "income", "ss", "tax")
+# synlist |>
+#   map(function(x) {
+#     x$syn <- map(x$syn, ~ mutate(.x, across(c(tax, income, ss), ~abs(.x)^{1/3} * sign(.x), .names = "{.col}.cube")))
+#     dat <- mutate(df, across(c(tax, income, ss), ~abs(.x)^{1/3} * sign(.x), .names = "{.col}.cube"))
+#     compare(x, dat, vars = vars)
+#   })
+
+PE <- synlist |>
+  map(function(x) {
+    map_dbl(vars, function(var) {
+      map_dbl(x$syn, ~ulsif(.x[[var]], df[[var]], nsigma = 10, nlambda = 10, 
+                            ncenters = 100, progressbar = FALSE) |>
+                summary(test = FALSE) |>
+                (\(x) x$PE)()
+      ) |> mean()
+    })
+  }, .progress = TRUE)
+
+PE_allvars <- synlist |>
+  map(function(x) {
+    map_dbl(x$syn, ~ulsif(
+      .x |> mutate(across(everything(), as.numeric)),
+      df |> mutate(across(everything(), as.numeric)),
+      nsigma = 10, nlambda = 10, ncenters = 100) |>
+        summary(test = FALSE) |>
+        (\(x) x$PE)()
+    ) |> mean()
+  })
+
+bind_rows(PE, PE_allvars) |>
+  select(-c(cart, smoothed_semi)) |>
+  mutate(variable = factor(1:5, labels = c("Age", "Income", "Social security", "Tax", "All"))) |>
+  tidyr::pivot_longer(cols = c(unadj, trans, semi, smoothed)) |>
+  mutate(`Synthesis method` = factor(name, levels = c("unadj", "trans", "semi", "smoothed"),
+                                     labels = c("Naïve", "Transformed", "Semi-continuous", "Smoothed CART"))) |>
+  ggplot(aes(x = variable, y = value, col = `Synthesis method`, shape = `Synthesis method`, 
+             group = `Synthesis method`)) +
+  geom_point(size = 3) +
+  # geom_line(alpha = 0.1, linetype = "dashed") +
+  scale_y_log10() +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  ylab("Pearson divergence") +
+  xlab("Variable") +
+  theme(legend.position = "bottom",
+        text = element_text(family = "LM Roman 10", size = 9))
+  
+```
+
 
 # Discussion
 
-Discuss relation with existing utility measures as pmse (i.e., similar through probabilistic classification) and eventually kl-divergence.
+When creating synthetic data with the goal of private data release, it is crucial to evaluate its quality.
+This allows the data provider to decide whether the synthetic data is useful for the purposes of the release or requires further refinements, and to inform the data user about the analyses that can be reliably conducted.
+In this paper, we showed that density ratio estimation provides a promising framework to evaluate the utility of synthetic data and we implemented the approach in the R-package `densityratio` [@densityratio].
+In a small simulation, we showed that for sample sizes as small as $250$ observations, it was possible to obtain a rather accurate estimate of the true density ratio.
+Moreover, in terms of statistical power, density ratio estimation performed on par with the $pMSE$ and outperforms the Kolmogorov-Smirnov test in the univariate comparisons considered. 
+When evaluating density ratio estimation on multiple synthetic versions of a real-world data set, we showed that the method was able to pick up all improvements in the synthesis models made, in contrast to the $pMSE$ [as shown by @drechsler_utility_2022]. 
+Moreover, whereas @drechsler_utility_2022 showed that quantification of the utility through the $pMSE$ was highly dependent on the propensity score model, density ratio estimation possesses automatic model selection in terms of its hyperparameters, and thus requires almost no user-specification. 
+We emphasize that we used the same default settings for our simulations and for modelling all individual variables and the entire data sets in our empirical example, regardless of the varying scales of the variables and other variable-specific peculiarities, such as point masses and non-normality.
 
-Discuss the high-dimensional extensions of density-ratio estimation
+Although this paper focused on various comparisons, we note that there are many connections between density ratio estimation and existing utility measures. For example, the $pMSE$ can be considered as an instance of density ratio estimation, in which the propensity scores are used to model the density ratio. 
+Specifically, the propensity scores can be transformed into the posterior odds of any record belonging to the synthetic data versus the observed data, which yields an estimate of the density ratio.
+Additionally, @sugiyama_suzuki_kanamori_2012 show that density ratio estimation can be regarded as divergence estimation between the numerator and denominator density. 
+As such, the framework also encompasses estimation of, for example, the Kullback-Leibler divergence, proposed as utility measure by @karr_utility_2006.
+Lastly, density ratio estimation can be seen as an extension of the "ratio of estimates" utility measure [@taub2020], which is defined for categorical data as the ratio of observed and synthetic frequencies (scaled to be between $0$ and $1$ by putting the largest count in the denominator), to continuous data.
+As such, the density ratio framework encapsulates various measures to evaluate the utility of synthetic data. 
 
-Discuss how you get informative density ratio values at every point in the multivariate data distribution
 
-Number of centers
+Expanding upon the appealing properties discussed in this paper, we foresee three additional advantages of the density ratio framework. 
+__(1) Utility on the level of individual data points.__ 
+The density ratio is estimated over the entire (multivariate) space of the data, and these estimates can be used to quantify the deviation of every synthetic data point with respect to the observed data.
+These values can help to identify sub-spaces that are poorly reproduced in the synthetic data, but they might also yield additional benefits. 
+On a low level, these values might be used to discard observations that are considered as being too far from the observed data to be realistic, or resample observations that are typical in the observed data but occur infrequently in the synthetic data. 
+On a higher level, one could potentially use density ratio values to reweigh analyses with synthetic data to bring the results closer to the real data. 
+Future research should evaluate the merits of this approach, but also potential privacy risks of disseminating such weights. 
+__(2) Density ratios for specific utility.__
+Another potential benefit is that the use of the method is not necessarily restricted to the level of the data at hand. 
+Density ratio estimation could give rise to analysis-specific utility measures by applying the framework on the posterior distributions of parameters (or an approximation hereof). 
+That is, if the distribution of the parameters of the analysis model can be approximated, for example by a multivariate normal distribution, or when samples from the parameter distribution are available, it is possible to either analytically calculate the density ratio, or estimate it using the techniques described above.
+The resulting density ratio can then again be used to quantify how similar the distributions are.
+__(3) Extensions to high-dimensional data.__
+When the number of variables grows large relative to the number of observations, direct density ratio estimation through unconstrained least-squares importance fitting might become inaccurate. 
+However, the density ratio estimation framework possesses readily available extensions that include dimension reduction as part of the estimation process, which yields the advantage of simultaneously optimizing the density ratio solution with the dimension-reduced subspace of the data [@sugiyama_lhss_2011]. 
 
-Model selection
 
-Dealing with categorical variables
+Finally, let us remark that there are several open questions that need to be addressed before density ratio estimation can be fully incorporated in synthetic data evaluation pipelines. 
+First, methodological research should investigate how to deal with categorical variables.
+In the density ratio estimation framework, the focus has almost exclusively been on numeric data, whereas in practical situations, categorical data is all too common. 
+In this paper, we dealt with the issue by simply transforming the categorical variables into numeric variables, but other techniques might yield more accurate results. 
+To name three other strategies, one could transform the categorical variables into dummy variables, use a different distance metric that allows for categorical data when specifying the kernel, or assume an underlying continuous latent space, and model the categorical variables on this space. 
+Second, which default settings to use in density ratio estimation is still an open question. 
+Although we showed that our default settings performed reasonably, most choices lack a strong theoretical justification. 
+Potentially, the utility of synthetic data can be evaluated much more accurately by, for example, choosing a different kernel, choosing the centers in the Gaussian kernel in a different way, or using a broader range of bandwidth and regularization parameters. 
+Lastly, it must be evaluated what information from density ratio estimation can be released to the public without incurring severe privacy risks. 
+Presumably, releasing the Pearson divergence, potentially augmented with a $p$-value to indicate the lack of fit of the synthetic data, will yield only little additional privacy risk. 
+However, releasing visualizations of the estimated density ratio or the estimated density ratio values themselves might cause unacceptable threats, especially for observations in the tails of the distribution.
+Future research can make efforts to privatize the output from density ratio estimation, or at least investigate what risks are related to releasing the output of the estimation process. 
+With these promising avenues for extensions in mind, we conclude that the density ratio estimation framework provides a viable and intuitive alternative to existing utility measures that can enhance synthetic data workflows.
+
+
+
+# Acknowledgements
+
+We are grateful to Dr. Jörg Drechsler for sharing his cleaned version of the Current Population Survey data and the corresponding analysis code.
 
 # References
+
+::: {#refs}
+:::
+
+\clearpage
+
+# Appendix A - Description of the CPS data {.appendix}
+
+```{r}
+#| label: tbl-desc
+#| echo: false
+#| message: false
+#| warning: false
+#| tbl-cap: "Descriptive statistics of the considered subset of observations and variables in the March 2000 U.S. Current Population Survey."
+#| tbl-cap-location: top
+
+tabledat <- df |>
+  select(sex, race, marital, educ, age, ss, tax, income) |>
+  mutate(educ = factor(educ,
+                       labels = c("No High School Diploma",
+                                  "High School Diploma",
+                                  "Associate or bachelor's degree",
+                                  "Master's degree or higher")),
+         marital = factor(marital, labels = c("Married", 
+                                              "Separated", 
+                                              "Widowed", 
+                                              "Single", 
+                                              "Widowed or divorced")))
+
+table1::label(tabledat$tax) <- "Household property taxes"
+table1::label(tabledat$income) <- "Household income"
+table1::label(tabledat$age) <- "Age"
+table1::label(tabledat$educ) <- "Highest attained education level"
+table1::label(tabledat$marital) <- "Marital status"
+table1::label(tabledat$race) <- "Race"
+table1::label(tabledat$sex) <- "Sex"
+table1::label(tabledat$ss) <- "Social security payments"
+
+
+table1::table1(~., data = tabledat) |>
+  table1::t1kable(format = "latex") |>
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+```{r}
+#| label: fig-vars-orig
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-dpi: 500
+#| out-width: 100%
+#| fig-height: 3
+#| fig-pos: t
+#| dev: cairo_pdf
+#| fig-cap: "Histograms of the considered subset of observations and continuous variables in the March 2000 U.S. Current Population Survey."
+
+df |> 
+  select(age, ss, tax, income) |>
+  tidyr::pivot_longer(cols = everything(), names_to = "Variable") |>
+  mutate(Variable = factor(Variable,
+                           levels = c("age", "income", "ss", "tax"), 
+                           labels = c("Age", "Income", "Social security", "Tax"))) |>
+  ggplot(aes(x = value, after_stat(density))) +
+  geom_histogram(col = "black", 
+                 fill = RColorBrewer::brewer.pal(3, "Set2")[1],
+                 bins = 40) +
+  facet_wrap(~Variable, ncol = 2, scales = "free") + 
+  theme_minimal() +
+  ylab("Density") +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(family = "LM Roman 10", size = 8))
+```
